@@ -29,7 +29,7 @@ from .categorical import (
     MonadPrompt,
     Comonad,
     Observation,
-    CategoricalMetaPromptingEngine,
+    # CategoricalMetaPromptingEngine,  # TODO: Implement in next phase
 )
 
 __all__ = [
@@ -38,5 +38,5 @@ __all__ = [
     "MonadPrompt",
     "Comonad",
     "Observation",
-    "CategoricalMetaPromptingEngine",
+    # "CategoricalMetaPromptingEngine",  # TODO: Implement in next phase
 ]

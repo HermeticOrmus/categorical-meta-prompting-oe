@@ -13,7 +13,7 @@ All structures come with property-based tests verifying categorical laws.
 from .functor import Functor, create_task_to_prompt_functor
 from .monad import Monad, MonadPrompt, create_recursive_meta_monad
 from .comonad import Comonad, Observation, create_context_comonad
-from .engine import CategoricalMetaPromptingEngine
+# from .engine import CategoricalMetaPromptingEngine  # TODO: Implement in next phase
 
 __all__ = [
     "Functor",
@@ -24,5 +24,5 @@ __all__ = [
     "Comonad",
     "Observation",
     "create_context_comonad",
-    "CategoricalMetaPromptingEngine",
+    # "CategoricalMetaPromptingEngine",  # TODO: Implement in next phase
 ]
