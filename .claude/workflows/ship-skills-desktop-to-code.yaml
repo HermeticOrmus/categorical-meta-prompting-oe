@@ -1,0 +1,147 @@
+name: ship-skills-desktop-to-code
+description: Convert Claude Desktop .skill files to Claude Code skill.md format and deploy
+version: 1.0.0
+tags: [skills, shipping, desktop, code, conversion]
+
+# Workflow: Ship Skills from Claude Desktop to Claude Code
+#
+# Claude Desktop exports skills as .skill files (ZIP archives containing SKILL.md)
+# Claude Code expects skills in .claude/skills/{name}/skill.md format
+#
+# This workflow automates the conversion and deployment process.
+
+parameters:
+  source_dir:
+    type: string
+    description: "Directory containing .skill files"
+    required: true
+    example: "categorical-meta-prompting-skills"
+
+  target_dir:
+    type: string
+    description: "Target .claude/skills directory"
+    default: ".claude/skills"
+
+  deploy_global:
+    type: boolean
+    description: "Also deploy to ~/.claude/skills/"
+    default: false
+
+steps:
+  - id: validate_source
+    name: "Validate Source Directory"
+    description: "Check that .skill files exist"
+    commands:
+      - "ls -la {{ source_dir }}/*.skill"
+    validation:
+      - "At least one .skill file must exist"
+
+  - id: extract_skills
+    name: "Extract Skill Archives"
+    description: "Unzip .skill files to temp directory"
+    commands:
+      - "mkdir -p /tmp/skill-extract"
+      - "for f in {{ source_dir }}/*.skill; do unzip -o \"$f\" -d /tmp/skill-extract/; done"
+    outputs:
+      - extracted_dir: "/tmp/skill-extract"
+
+  - id: validate_format
+    name: "Validate YAML Frontmatter"
+    description: "Check each SKILL.md has valid frontmatter"
+    commands:
+      - "for dir in /tmp/skill-extract/*/; do head -5 \"$dir/SKILL.md\"; done"
+    validation:
+      - "Each file must start with ---"
+      - "Must have name: and description: fields"
+
+  - id: create_target
+    name: "Create Target Structure"
+    description: "Set up .claude/skills directories"
+    commands:
+      - "mkdir -p {{ target_dir }}"
+      - |
+        for dir in /tmp/skill-extract/*/; do
+          name=$(basename "$dir")
+          mkdir -p "{{ target_dir }}/$name"
+          cp "$dir/SKILL.md" "{{ target_dir }}/$name/skill.md"
+        done
+
+  - id: verify_deployment
+    name: "Verify Deployment"
+    description: "Check all skills are properly deployed"
+    commands:
+      - "ls -la {{ target_dir }}/*/skill.md"
+      - "for f in {{ target_dir }}/*/skill.md; do echo \"=== $f ===\"; head -4 \"$f\"; done"
+
+  - id: global_deploy
+    name: "Deploy to Global (Optional)"
+    condition: "{{ deploy_global }}"
+    commands:
+      - |
+        for dir in {{ target_dir }}/*/; do
+          name=$(basename "$dir")
+          mkdir -p ~/.claude/skills/$name
+          cp "$dir/skill.md" ~/.claude/skills/$name/
+        done
+
+  - id: generate_index
+    name: "Generate Skills Index"
+    description: "Create README with skill inventory"
+    commands:
+      - |
+        cat > {{ target_dir }}/README.md << 'EOF'
+        # Skills Index
+
+        | Skill | Size | Description |
+        |-------|------|-------------|
+        EOF
+      - |
+        for f in {{ target_dir }}/*/skill.md; do
+          name=$(dirname "$f" | xargs basename)
+          size=$(wc -c < "$f" | xargs)
+          desc=$(grep "^description:" "$f" | head -1 | sed 's/description: //' | cut -c1-60)
+          echo "| $name | ${size}B | ${desc}... |" >> {{ target_dir }}/README.md
+        done
+
+# Expected file structure after conversion:
+#
+# Before (Claude Desktop export):
+# ├── categorical-meta-prompting-skills/
+# │   ├── effect-ts-ai.skill          # ZIP archive
+# │   ├── dspy-categorical.skill       # ZIP archive
+# │   └── ...
+#
+# After (Claude Code format):
+# ├── .claude/
+# │   └── skills/
+# │       ├── effect-ts-ai/
+# │       │   └── skill.md             # Converted
+# │       ├── dspy-categorical/
+# │       │   └── skill.md             # Converted
+# │       └── README.md                # Generated index
+
+# Skill file format requirements:
+#
+# YAML frontmatter (required):
+# ---
+# name: skill-name-lowercase
+# description: Single line description for Claude triggering
+# ---
+#
+# Markdown content follows with:
+# - Installation instructions
+# - Core concepts and patterns
+# - Code examples
+# - Best practices
+
+usage_example: |
+  # Convert skills from a directory
+  /wflw ship-skills-desktop-to-code --param source_dir=my-skills/
+
+  # Also deploy to global ~/.claude/skills
+  /wflw ship-skills-desktop-to-code --param source_dir=my-skills/ --param deploy_global=true
+
+metadata:
+  created: "2025-11-29"
+  author: "categorical-meta-prompting"
+  phase: "Phase 3 - Production Integration"
