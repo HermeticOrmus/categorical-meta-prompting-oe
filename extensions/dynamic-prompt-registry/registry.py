@@ -1,407 +1,225 @@
 """
-Prompt Registry: Named Morphisms in the Prompt Category
+Minimal Prompt Registry - Actually Works Edition
 
-Categorical Interpretation:
-- Objects: Prompt types (Problem, Solution, Code, etc.)
-- Morphisms: Named, stored prompt transformations
-- Composition: Kleisli composition of registered prompts
-- Enrichment: [0,1]-enriched with quality scores
-
-This provides the "environment" that Reader monad accesses,
-enabling dynamic prompt lookup at runtime via {prompt_name} syntax.
-
-Example:
-    registry = PromptRegistry()
-
-    # Register domain-specific prompts with quality scores
-    registry.register(
-        name="fibonacci",
-        prompt=Prompt(template="Solve fibonacci({n}) using DP..."),
-        domain=DomainTag.ALGORITHMS,
-        quality=0.95
-    )
-
-    # Lookup returns Reader monad for composition
-    fib_reader = registry.lookup("fibonacci")
-    prompt = fib_reader.run(registry)  # Resolve against registry
+A simple dict-based registry for storing and retrieving prompts.
+No categorical formalism. No over-engineering. Just works.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Optional, List, Set, Callable, Any, TypeVar
+from typing import Dict, List, Optional, Any
 from enum import Enum, auto
-from datetime import datetime
-import re
-
-# Type variables for generic operations
-A = TypeVar('A')
-B = TypeVar('B')
+import json
 
 
-class DomainTag(Enum):
-    """
-    Domain tags for organizing prompts.
-
-    Enables domain-specific lookup and quality thresholds.
-    """
-    ALGORITHMS = auto()
-    MATHEMATICS = auto()
-    CODE_GENERATION = auto()
-    CODE_REVIEW = auto()
-    WRITING = auto()
-    ANALYSIS = auto()
-    REASONING = auto()
-    EXTRACTION = auto()
-    SUMMARIZATION = auto()
-    TRANSLATION = auto()
+class Domain(Enum):
+    """Simple domain classification."""
+    ALGORITHM = auto()
+    SECURITY = auto()
+    API = auto()
+    DATABASE = auto()
+    TESTING = auto()
+    DEBUG = auto()
     GENERAL = auto()
 
 
 @dataclass
-class QualityMetrics:
-    """
-    Quality metrics for a registered prompt.
-
-    Tracks empirical performance across executions.
-    """
-    # Core quality score [0, 1]
-    score: float = 0.0
-
-    # Component scores
-    correctness: float = 0.0
-    clarity: float = 0.0
-    efficiency: float = 0.0
-
-    # Usage statistics
-    execution_count: int = 0
-    success_count: int = 0
-    avg_latency_ms: float = 0.0
-
-    # Verification status
-    tested: bool = False
-    verified: bool = False
-
-    @property
-    def success_rate(self) -> float:
-        if self.execution_count == 0:
-            return 0.0
-        return self.success_count / self.execution_count
-
-    def update(self, success: bool, latency_ms: float, quality: float):
-        """Update metrics after execution."""
-        self.execution_count += 1
-        if success:
-            self.success_count += 1
-
-        # Exponential moving average for latency
-        alpha = 0.1
-        if self.avg_latency_ms == 0:
-            self.avg_latency_ms = latency_ms
-        else:
-            self.avg_latency_ms = alpha * latency_ms + (1 - alpha) * self.avg_latency_ms
-
-        # Update quality score (weighted average)
-        if self.score == 0:
-            self.score = quality
-        else:
-            self.score = alpha * quality + (1 - alpha) * self.score
-
-
-@dataclass
-class RegisteredPrompt:
-    """
-    A prompt registered in the registry.
-
-    Contains the prompt template, metadata, and quality metrics.
-    """
-    # Identity
+class Prompt:
+    """A stored prompt with metadata."""
     name: str
     template: str
+    domain: Domain = Domain.GENERAL
+    quality: float = 0.0  # 0.0 to 1.0, user-assigned
+    tags: List[str] = field(default_factory=list)
 
-    # Classification
-    domain: DomainTag = DomainTag.GENERAL
-    tags: Set[str] = field(default_factory=set)
-
-    # Type signature (for Kleisli composition)
-    input_type: str = "Any"
-    output_type: str = "Any"
-
-    # Quality tracking
-    quality: QualityMetrics = field(default_factory=QualityMetrics)
-
-    # Metadata
-    description: str = ""
-    examples: List[Dict[str, Any]] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.now)
-    updated_at: datetime = field(default_factory=datetime.now)
-
-    # Dependencies (other prompts this references)
-    dependencies: Set[str] = field(default_factory=set)
-
-    def render(self, variables: Dict[str, Any]) -> str:
-        """
-        Render template with variables.
-
-        Does NOT resolve {prompt_name} references - that's the resolver's job.
-        """
+    def render(self, **kwargs) -> str:
+        """Render template with variables."""
         result = self.template
-        for key, value in variables.items():
+        for key, value in kwargs.items():
             result = result.replace(f"{{{key}}}", str(value))
         return result
 
-    def get_variable_names(self) -> Set[str]:
-        """Extract variable names from template."""
-        # Match {name} but not {prompt_name} (which are for lookup)
-        pattern = r'\{([a-zA-Z_][a-zA-Z0-9_]*)\}'
-        return set(re.findall(pattern, self.template))
 
-
-@dataclass
 class PromptRegistry:
     """
-    Registry of named prompts (morphisms in Prompt category).
+    Simple prompt registry.
 
-    Categorical Structure:
-    - This is the "environment" for Reader monad operations
-    - Prompts are named morphisms that can be looked up and composed
-    - Quality scores provide [0,1]-enriched structure
-
-    Features:
-    - Register prompts with domain tags and quality metrics
-    - Lookup prompts by name (returns Reader monad)
-    - Find prompts by domain or quality threshold
-    - Compose prompts via Kleisli composition
-    - Track dependencies between prompts
+    Usage:
+        registry = PromptRegistry()
+        registry.register("greet", "Hello, {name}!")
+        print(registry.get("greet").render(name="World"))
     """
 
-    # Core storage
-    prompts: Dict[str, RegisteredPrompt] = field(default_factory=dict)
-
-    # Indices for efficient lookup
-    _by_domain: Dict[DomainTag, Set[str]] = field(default_factory=dict)
-    _by_tag: Dict[str, Set[str]] = field(default_factory=dict)
-
-    # Quality thresholds by domain
-    domain_thresholds: Dict[DomainTag, float] = field(default_factory=lambda: {
-        DomainTag.ALGORITHMS: 0.90,
-        DomainTag.MATHEMATICS: 0.90,
-        DomainTag.CODE_GENERATION: 0.85,
-        DomainTag.CODE_REVIEW: 0.85,
-        DomainTag.WRITING: 0.80,
-        DomainTag.ANALYSIS: 0.85,
-        DomainTag.REASONING: 0.90,
-        DomainTag.GENERAL: 0.75,
-    })
+    def __init__(self):
+        self.prompts: Dict[str, Prompt] = {}
 
     def register(
         self,
         name: str,
         template: str,
-        domain: DomainTag = DomainTag.GENERAL,
+        domain: Domain = Domain.GENERAL,
         quality: float = 0.0,
-        description: str = "",
-        tags: Set[str] = None,
-        input_type: str = "Any",
-        output_type: str = "Any",
-        examples: List[Dict[str, Any]] = None,
-    ) -> RegisteredPrompt:
-        """
-        Register a named prompt in the registry.
-
-        Args:
-            name: Unique identifier for lookup
-            template: Prompt template with {variable} placeholders
-            domain: Domain classification
-            quality: Initial quality score [0, 1]
-            description: Human-readable description
-            tags: Additional tags for discovery
-            input_type: Type annotation for input
-            output_type: Type annotation for output
-            examples: Example inputs/outputs
-
-        Returns:
-            The registered prompt object
-        """
-        # Detect dependencies (references to other prompts)
-        dependencies = self._detect_dependencies(template)
-
-        prompt = RegisteredPrompt(
+        tags: List[str] = None
+    ) -> Prompt:
+        """Register a prompt."""
+        prompt = Prompt(
             name=name,
             template=template,
             domain=domain,
-            tags=tags or set(),
-            input_type=input_type,
-            output_type=output_type,
-            quality=QualityMetrics(score=quality, tested=quality > 0),
-            description=description,
-            examples=examples or [],
-            dependencies=dependencies,
+            quality=quality,
+            tags=tags or []
         )
-
-        # Store prompt
         self.prompts[name] = prompt
-
-        # Update indices
-        if domain not in self._by_domain:
-            self._by_domain[domain] = set()
-        self._by_domain[domain].add(name)
-
-        for tag in prompt.tags:
-            if tag not in self._by_tag:
-                self._by_tag[tag] = set()
-            self._by_tag[tag].add(name)
-
         return prompt
 
-    def _detect_dependencies(self, template: str) -> Set[str]:
-        """
-        Detect references to other prompts in template.
-
-        Pattern: {prompt:name} or {lookup:name}
-        """
-        pattern = r'\{(?:prompt|lookup):([a-zA-Z_][a-zA-Z0-9_]*)\}'
-        return set(re.findall(pattern, template))
-
-    def get(self, name: str) -> Optional[RegisteredPrompt]:
-        """Get prompt by name (direct access)."""
+    def get(self, name: str) -> Optional[Prompt]:
+        """Get a prompt by name."""
         return self.prompts.get(name)
 
-    def lookup(self, name: str) -> 'Reader[PromptRegistry, Optional[RegisteredPrompt]]':
-        """
-        Lookup prompt by name (Reader monad).
+    def list_all(self) -> List[Prompt]:
+        """List all prompts."""
+        return list(self.prompts.values())
 
-        Returns a Reader that, when run against a registry,
-        retrieves the named prompt.
+    def find_by_domain(self, domain: Domain) -> List[Prompt]:
+        """Find prompts by domain."""
+        return [p for p in self.prompts.values() if p.domain == domain]
 
-        This enables composition:
-            lookup("a") >>= (lambda a: lookup("b") >>= (lambda b: ...))
-        """
-        from .reader import Reader
-        return Reader(lambda reg: reg.prompts.get(name))
+    def find_by_tag(self, tag: str) -> List[Prompt]:
+        """Find prompts by tag."""
+        return [p for p in self.prompts.values() if tag in p.tags]
 
-    def find_by_domain(self, domain: DomainTag) -> List[RegisteredPrompt]:
-        """Find all prompts in a domain."""
-        names = self._by_domain.get(domain, set())
-        return [self.prompts[n] for n in names if n in self.prompts]
-
-    def find_by_tag(self, tag: str) -> List[RegisteredPrompt]:
-        """Find all prompts with a tag."""
-        names = self._by_tag.get(tag, set())
-        return [self.prompts[n] for n in names if n in self.prompts]
-
-    def find_by_quality(self, min_quality: float) -> List[RegisteredPrompt]:
+    def find_by_quality(self, min_quality: float) -> List[Prompt]:
         """Find prompts meeting quality threshold."""
-        return [
-            p for p in self.prompts.values()
-            if p.quality.score >= min_quality
-        ]
+        return [p for p in self.prompts.values() if p.quality >= min_quality]
 
-    def find_verified(self) -> List[RegisteredPrompt]:
-        """Find all verified (tested) prompts."""
-        return [
-            p for p in self.prompts.values()
-            if p.quality.verified
-        ]
-
-    def get_best_for_domain(self, domain: DomainTag) -> Optional[RegisteredPrompt]:
+    def best_for_domain(self, domain: Domain) -> Optional[Prompt]:
         """Get highest quality prompt for a domain."""
         domain_prompts = self.find_by_domain(domain)
         if not domain_prompts:
             return None
-        return max(domain_prompts, key=lambda p: p.quality.score)
+        return max(domain_prompts, key=lambda p: p.quality)
 
-    def validate_dependencies(self, name: str) -> List[str]:
-        """
-        Check if all dependencies of a prompt are satisfied.
-
-        Returns list of missing dependency names.
-        """
-        prompt = self.prompts.get(name)
-        if not prompt:
-            return [name]
-
-        missing = []
-        for dep in prompt.dependencies:
-            if dep not in self.prompts:
-                missing.append(dep)
-        return missing
-
-    def topological_order(self, name: str) -> List[str]:
-        """
-        Get prompts in dependency order (for execution).
-
-        Returns prompts from leaves (no deps) to root.
-        """
-        visited = set()
-        order = []
-
-        def visit(n: str):
-            if n in visited:
-                return
-            visited.add(n)
-            prompt = self.prompts.get(n)
-            if prompt:
-                for dep in prompt.dependencies:
-                    visit(dep)
-            order.append(n)
-
-        visit(name)
-        return order
-
-    def compose(self, *names: str) -> Optional[str]:
-        """
-        Compose multiple prompts into a single template.
-
-        Kleisli composition: a >=> b >=> c
-        """
-        templates = []
-        for name in names:
-            prompt = self.prompts.get(name)
-            if not prompt:
-                return None
-            templates.append(f"# Step: {name}\n{prompt.template}")
-
-        return "\n\n".join(templates)
-
-    def export(self) -> Dict[str, Any]:
-        """Export registry to serializable format."""
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dict."""
         return {
-            "version": "0.1.0",
-            "prompts": {
-                name: {
-                    "template": p.template,
-                    "domain": p.domain.name,
-                    "quality": p.quality.score,
-                    "description": p.description,
-                    "tags": list(p.tags),
-                    "input_type": p.input_type,
-                    "output_type": p.output_type,
-                }
-                for name, p in self.prompts.items()
+            name: {
+                "template": p.template,
+                "domain": p.domain.name,
+                "quality": p.quality,
+                "tags": p.tags
             }
+            for name, p in self.prompts.items()
         }
 
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'PromptRegistry':
-        """Import registry from serialized format."""
-        registry = cls()
-        for name, pdata in data.get("prompts", {}).items():
-            registry.register(
+    def save(self, path: str):
+        """Save to JSON file."""
+        with open(path, 'w') as f:
+            json.dump(self.to_dict(), f, indent=2)
+
+    def load(self, path: str):
+        """Load from JSON file."""
+        with open(path) as f:
+            data = json.load(f)
+        for name, pdata in data.items():
+            self.register(
                 name=name,
                 template=pdata["template"],
-                domain=DomainTag[pdata.get("domain", "GENERAL")],
+                domain=Domain[pdata.get("domain", "GENERAL")],
                 quality=pdata.get("quality", 0.0),
-                description=pdata.get("description", ""),
-                tags=set(pdata.get("tags", [])),
-                input_type=pdata.get("input_type", "Any"),
-                output_type=pdata.get("output_type", "Any"),
+                tags=pdata.get("tags", [])
             )
-        return registry
 
-    def __contains__(self, name: str) -> bool:
-        return name in self.prompts
-
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self.prompts)
 
-    def __iter__(self):
-        return iter(self.prompts.values())
+    def __contains__(self, name: str):
+        return name in self.prompts
+
+
+# Built-in prompts for common tasks
+def create_default_registry() -> PromptRegistry:
+    """Create registry with useful default prompts."""
+    r = PromptRegistry()
+
+    r.register(
+        name="debug",
+        template="""Debug this issue systematically:
+
+Issue: {issue}
+
+1. What is the exact error/symptom?
+2. What's the minimal reproduction?
+3. What are 2-3 likely causes?
+4. How to test each hypothesis?
+5. What's the fix?""",
+        domain=Domain.DEBUG,
+        quality=0.8,
+        tags=["debug", "systematic"]
+    )
+
+    r.register(
+        name="review_algorithm",
+        template="""Review this code for algorithmic correctness:
+
+{code}
+
+Check:
+1. Time complexity (Big-O)
+2. Space complexity
+3. Edge cases (empty, single, large)
+4. Correctness for all inputs""",
+        domain=Domain.ALGORITHM,
+        quality=0.8,
+        tags=["review", "algorithm", "complexity"]
+    )
+
+    r.register(
+        name="review_security",
+        template="""Review this code for security issues:
+
+{code}
+
+Check:
+1. Input validation
+2. Injection risks (SQL, command, XSS)
+3. Authentication/authorization
+4. Sensitive data exposure""",
+        domain=Domain.SECURITY,
+        quality=0.85,
+        tags=["review", "security", "owasp"]
+    )
+
+    r.register(
+        name="test_generate",
+        template="""Generate tests for this code:
+
+{code}
+
+Include:
+1. Happy path tests
+2. Edge case tests
+3. Error case tests
+
+Use clear test names and assertions.""",
+        domain=Domain.TESTING,
+        quality=0.75,
+        tags=["test", "generate"]
+    )
+
+    return r
+
+
+if __name__ == "__main__":
+    # Self-test
+    r = create_default_registry()
+    print(f"Registry has {len(r)} prompts")
+
+    debug_prompt = r.get("debug")
+    print(f"\nDebug prompt exists: {debug_prompt is not None}")
+
+    rendered = debug_prompt.render(issue="TypeError in line 42")
+    print(f"\nRendered (first 100 chars):\n{rendered[:100]}...")
+
+    best_security = r.best_for_domain(Domain.SECURITY)
+    print(f"\nBest security prompt: {best_security.name if best_security else 'None'}")
+
+    print("\nSelf-test: PASSED")

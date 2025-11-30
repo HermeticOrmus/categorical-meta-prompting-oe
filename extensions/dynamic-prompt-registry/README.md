@@ -1,220 +1,132 @@
-# Dynamic Prompt Registry Extension
+# Dynamic Prompt Registry - v2.0 (Minimal Working Edition)
 
-## Design Rationale (RMP Iterations)
+## Status: Actually Works
 
-This extension was designed using Recursive Meta-Prompting (RMP) to ensure quality convergence.
+| File | Lines | Runs | Tests Pass |
+|------|-------|------|------------|
+| registry.py | 148 | ✅ | ✅ |
+| selector.py | 117 | ✅ | ✅ (4/4) |
+| cli.py | 124 | ✅ | ✅ |
+| __init__.py | 26 | ✅ | N/A |
+| **Total** | **415** | **4/4** | **All** |
 
-### User's Core Insight
+**Compare to v1**: 2548 lines, 1/7 modules worked, ~8% success rate.
 
-> "In meta prompting we define steps for broader problems. But we insert a prompt call like `{get appropriate prompt}` that fetches the best prompt for the problem."
+## What It Does
 
-This insight identifies a gap between:
-- **Static meta-prompting**: Steps defined at design time
-- **Dynamic dispatch**: Prompts selected at runtime based on problem characteristics
+1. **Stores prompts** in a simple dict with domain/quality metadata
+2. **Selects prompts** based on keyword matching (honest about limitations)
+3. **Renders prompts** with variable substitution
+4. **CLI interface** for list/get/select/render
 
-### RMP Iteration Summary
+## What It Doesn't Do (Honestly)
 
-| Iteration | Quality | Key Insight |
-|-----------|---------|-------------|
-| 1 | 0.67 | Task analysis: High complexity (0.85), needs AUTONOMOUS_EVOLUTION strategy |
-| 2 | 0.75 | Core insight: Not just lookup-by-name, but semantic matching + quality weighting |
-| 3 | 0.82 | Integration design: Functor should use registry for Task→Prompt mapping |
-| 4 | 0.88 | Added `AppropriatePromptSelector` with domain classification |
-| 5 | 0.91 | Added engine integration, `{get:appropriate}` syntax |
-
-### Final Quality Assessment
-
-```
-Correctness:   0.90 (Full categorical structure, laws preserved)
-Completeness:  0.88 (Registry, Reader, Queue, Selector, Integration)
-Clarity:       0.92 (Clean API, documented)
-Efficiency:    0.85 (Keyword-based selection, could add embeddings later)
-────────────────────
-Aggregate:     0.89 → 0.91 (Above 0.90 threshold)
-```
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Meta-Prompt Template                        │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │ Analyze: {var:problem}                                    │  │
-│  │                                                           │  │
-│  │ Step 1: {prompt:analysis}         ← Named lookup          │  │
-│  │ Step 2: {get:appropriate}         ← Auto-select best      │  │
-│  │ Step 3: {appropriate:algorithms}  ← Domain-specific best  │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Reference Resolver                           │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
-│  │ {prompt:X}   │  │ {get:approp} │  │ AppropriateSelector  │   │
-│  │ Direct lookup│  │ Auto-select  │  │ - Domain classify    │   │
-│  │ from registry│  │ best match   │  │ - Keyword match      │   │
-│  └──────┬───────┘  └──────┬───────┘  │ - Quality weight     │   │
-│         │                 │          │ - Score & rank       │   │
-│         └────────┬────────┘          └──────────────────────┘   │
-│                  ▼                                              │
-│           PromptRegistry                                        │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ fibonacci: {template, quality: 0.95, domain: ALGORITHMS}│   │
-│  │ sorting:   {template, quality: 0.92, domain: ALGORITHMS}│   │
-│  │ proof:     {template, quality: 0.88, domain: MATHEMATICS}   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              CategoricalMetaPromptingEngine                     │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │ Task → [RegistryAwareFunctor] → Prompt → [Monad] → Output │ │
-│  │             ↑                                              │ │
-│  │       Registry + Selector                                  │ │
-│  └────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Categorical Foundations
-
-### Reader Monad (Environment Access)
-
-```
-Reader[Registry, A] = Registry → A
-
-lookup("name") : Reader[Registry, Prompt]
-lookup("name").run(registry) → Prompt
-```
-
-The Reader monad enables:
-- Deferred resolution: Build computation, execute later with registry
-- Composable lookups: Chain multiple lookups monadically
-- Testability: Inject different registries for testing
-
-### Free Applicative (Prompt Queues)
-
-```
-PromptQueue = Free[QueueStep, _]
-
-Steps:
-- Literal(text)           : Pure value
-- Lookup(name)            : Deferred registry lookup
-- Apply(transform)        : Transformation
-- Conditional(pred, a, b) : Branching
-- Parallel(queues)        : Concurrent execution
-```
-
-The Free Applicative enables:
-- Introspection: Analyze queue before execution
-- Optimization: Batch lookups, parallelize independent steps
-- Interpretation: Execute with different strategies
-
-### Enriched Categories ([0,1]-Quality)
-
-```
-Hom(A, B) ∈ [0,1]
-
-Composition: min(q₁, q₂)  (pessimistic)
-Identity: 1.0
-```
-
-Quality scores provide enriched categorical structure:
-- Each prompt has quality ∈ [0,1]
-- Composition degrades: chaining prompts uses min quality
-- Selection prefers higher quality matches
-
-## Files
-
-| File | Purpose |
-|------|---------|
-| `registry.py` | `PromptRegistry`, `RegisteredPrompt`, `DomainTag` |
-| `reader.py` | Reader monad implementation |
-| `queue.py` | `PromptQueue` (Free Applicative) |
-| `resolver.py` | `{prompt:name}` reference resolution |
-| `selector.py` | `AppropriatePromptSelector` (core insight) |
-| `integration.py` | Integration with `CategoricalMetaPromptingEngine` |
+- **Semantic understanding** - It's keyword matching, not AI
+- **Categorical formalism** - No monads, no functors, just dicts
+- **Learning/optimization** - Quality scores are user-assigned
 
 ## Usage
 
-### Basic: Named Lookup
-
+### Python API
 ```python
-from extensions.dynamic_prompt_registry import PromptRegistry, resolve_references
+from extensions.dynamic_prompt_registry import PromptRegistry, Domain
 
-registry = PromptRegistry()
-registry.register("fibonacci", "Solve fibonacci({n}) using DP...", quality=0.95)
+r = PromptRegistry()
+r.register("greet", "Hello, {name}!", domain=Domain.GENERAL, quality=0.9)
 
-template = "To solve this: {prompt:fibonacci}"
-resolved = resolve_references(template, registry)
+prompt = r.get("greet")
+print(prompt.render(name="World"))  # "Hello, World!"
 ```
 
-### Advanced: Appropriate Selection
+### CLI
+```bash
+# List all prompts
+python cli.py list
 
-```python
-from extensions.dynamic_prompt_registry import (
-    AppropriatePromptSelector,
-    get_appropriate_prompt
-)
+# List prompts in a domain
+python cli.py list --domain security
 
-selector = AppropriatePromptSelector()
+# Select best prompt for a problem
+python cli.py select "fix this SQL injection bug"
+python cli.py select "fix this SQL injection bug" --explain
 
-# Auto-select best prompt for problem
-best = selector.select(
-    problem="Calculate the 50th fibonacci number efficiently",
-    registry=registry
-)
-# Returns: fibonacci (domain match + keyword overlap + quality)
+# Get a specific prompt
+python cli.py get debug
 
-# Or use in template
-template = "Apply best approach: {get:appropriate}"
+# Render a prompt with variables
+python cli.py render debug issue="TypeError on line 42"
 ```
 
-### Engine Integration
-
-```python
-from extensions.dynamic_prompt_registry import create_registry_enhanced_engine
-
-engine = create_registry_enhanced_engine(llm_client, registry)
-result = engine.execute(Task(description="Find F(100)"))
-# Engine automatically selects from registry when appropriate
+### Slash Commands
+```
+/list-prompts           - List all prompts
+/list-prompts security  - List security prompts
+/select-prompt "fix SQL injection"  - Select best prompt
 ```
 
-### Prompt Queues
+## Built-in Prompts
+
+| Name | Domain | Quality | Purpose |
+|------|--------|---------|---------|
+| debug | DEBUG | 0.8 | Systematic debugging |
+| review_algorithm | ALGORITHM | 0.8 | Algorithm review |
+| review_security | SECURITY | 0.85 | Security review |
+| test_generate | TESTING | 0.75 | Test generation |
+
+## Selector Honesty
+
+The selector uses **keyword matching**, not semantic understanding:
 
 ```python
-from extensions.dynamic_prompt_registry import PromptQueue, Lookup, Literal
-
-queue = (PromptQueue.empty()
-    .literal("Analyze problem:")
-    .lookup("problem_analysis")
-    .lookup("solution_approach")
-    .branch(
-        lambda ctx: ctx.get("complex"),
-        then=PromptQueue.from_lookup("detailed_steps"),
-        else_=PromptQueue.from_literal("Apply directly.")
-    ))
-
-# Introspect
-print(queue.describe())
-print(f"Lookups needed: {queue.get_lookups()}")
-
-# Execute
-result = queue.interpret(registry, context={"problem": "..."})
+DOMAIN_KEYWORDS = {
+    Domain.SECURITY: ["security", "auth", "injection", "xss", ...],
+    Domain.ALGORITHM: ["algorithm", "sort", "complexity", "O(n)", ...],
+    ...
+}
 ```
 
-## Literature & Prior Art
+If you want real semantic selection, ask Claude directly.
 
-| System | Related Feature | Difference |
-|--------|-----------------|------------|
-| DSPy | Module signatures | We add quality tracking + categorical structure |
-| LangChain | PromptTemplate registry | We add semantic selection + Reader monad |
-| Guidance | Named program blocks | We add deferred execution + Free Applicative |
-| Semantic Kernel | Skill registry | We add domain classification + quality enrichment |
+## Comparison: v1 vs v2
 
-**Novel contributions:**
-1. Categorical formalization (Reader, Free Applicative)
-2. Quality-enriched selection with [0,1] structure
-3. `{get:appropriate}` semantic matching
-4. Integration with categorical meta-prompting engine
+| Metric | v1 (Theory) | v2 (Working) |
+|--------|-------------|--------------|
+| Lines of code | 2548 | 415 |
+| Files that run | 1/7 (14%) | 4/4 (100%) |
+| Tests passing | Unknown | 4/4 |
+| Categorical formalism | Claimed | None |
+| Actual utility | Low | Moderate |
+
+## Theoretical Work
+
+The categorical/theoretical version is preserved in:
+```
+research/dynamic-prompt-registry-v1/
+```
+
+See `research/dynamic-prompt-registry-v1/REFERENCE.md` for:
+- What concepts were valuable
+- What to extract if needed
+- Lessons learned
+
+## Honest Assessment
+
+**What works:**
+- Simple prompt storage and retrieval
+- Keyword-based domain classification
+- CLI with all commands functional
+- Slash command integration
+
+**What's limited:**
+- Keyword matching is crude (but honest about it)
+- No learning or optimization
+- Quality scores are manual
+- 4 built-in prompts (could add more)
+
+**Quality rating:** 6/10
+- Works completely (+3)
+- Honest about limitations (+2)
+- Limited functionality (+1)
+- No advanced features (0)
+
+This is not 0.91. This is a simple tool that does what it says.
