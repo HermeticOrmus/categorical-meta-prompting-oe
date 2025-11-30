@@ -493,9 +493,10 @@ class Game24Comonad:
         """Extract mathematical expression from solution text"""
         import re
 
-        # Look for patterns like "8/(3-8/3)" or "(8-4)*6"
+        # Look for patterns like "8/(3-8/3)" or "(8-4)*6" or "((1+2)+3)*4"
         patterns = [
-            r'(\d[\d\s\+\-\*\/\(\)]+\d)',  # Expression with operators
+            r'Solution:\s*([\d\s\+\-\*\/\(\)]+)',  # After "Solution:"
+            r'([\(\d][\d\s\+\-\*\/\(\)]+[\d\)])',  # Expression starting with ( or digit
             r'=\s*([\d\s\+\-\*\/\(\)]+)',   # After equals sign
         ]
 
@@ -503,6 +504,8 @@ class Game24Comonad:
             match = re.search(pattern, solution)
             if match:
                 expr = match.group(1).strip()
+                # Remove trailing " = 24" if present
+                expr = re.sub(r'\s*=\s*\d+\s*$', '', expr)
                 # Validate it's a valid expression
                 if all(c in '0123456789+-*/() ' for c in expr):
                     return expr
