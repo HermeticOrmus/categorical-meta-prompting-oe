@@ -20,79 +20,73 @@ $ARGUMENTS
   @sequential[
 
     ═══════════════════════════════════════════════════════
-    STAGE 1: TRIAGE & REPRODUCTION
+    STAGE 1: LOCATE & TRIAGE
+    ═══════════════════════════════════════════════════════
+
+    @run:now
+    → Parse error message/symptoms
+    → Search codebase for error location
+    → Read relevant files
+
+    ◆ location:found
+
+    ═══════════════════════════════════════════════════════
+    STAGE 2: REPRODUCE & ISOLATE
     ═══════════════════════════════════════════════════════
 
     @run:now
     → /debug {error}
-    # Systematic debugging: reproduce → isolate → hypothesize
+    → Create minimal reproduction case
 
-    ◆ reproduction:confirmed OR reproduction:intermittent
+    ◆ reproduction:confirmed OR escalate
 
     ═══════════════════════════════════════════════════════
-    STAGE 2: ROOT CAUSE ANALYSIS (PARALLEL HYPOTHESES)
+    STAGE 3: ROOT CAUSE ANALYSIS
     ═══════════════════════════════════════════════════════
 
     @parallel[
-      → /build-prompt "analyze code path for ${error}"
-      → /build-prompt "analyze data flow for ${error}"
-      → /build-prompt "analyze state transitions for ${error}"
+      → Trace code path
+      → Trace data flow
+      → Check state transitions
     ]
-    # Generate multiple analysis perspectives
+    → Synthesize into root cause
 
     ◆ root_cause:identified
 
     ═══════════════════════════════════════════════════════
-    STAGE 3: FIX IMPLEMENTATION
+    STAGE 4: FIX IMPLEMENTATION
     ═══════════════════════════════════════════════════════
 
     @run:now
-    → /template "fix for ${root_cause}"
-    # Construct fix with visible steps
+    → Implement minimal fix
+    → Add regression test BEFORE running
 
     @if:security-related
       ⚡ Skill: "security-analysis"
-      # Extra scrutiny for security bugs
 
     ◆ fix:implemented
 
     ═══════════════════════════════════════════════════════
-    STAGE 4: VERIFICATION (SEQUENTIAL - ORDER MATTERS)
+    STAGE 5: VERIFICATION
     ═══════════════════════════════════════════════════════
 
     @sequential[
-      @run:now
-      → Reproduce original bug
-      ◆ bug:no-longer-reproduces
-
-      @run:now
-      → Run existing tests
-      ◆ tests:pass
-
-      @run:now
-      → Add regression test for this bug
-      ◆ regression_test:added
+      → Confirm bug no longer reproduces
+      → Run full test suite
+      → Verify no regressions
     ]
 
+    ◆ verified OR @fallback → /rmp
+
     ═══════════════════════════════════════════════════════
-    STAGE 5: REVIEW & CONFIRM
+    STAGE 6: REVIEW & COMMIT
     ═══════════════════════════════════════════════════════
 
     @run:now
-    → /review ${fix}
-    # Domain-aware review of the fix
+    → /review ${changes}
+    → Prepare commit message
 
     ◆ review:approved
-    ◆ no:regressions
-
-    ═══════════════════════════════════════════════════════
-    STAGE 6: FALLBACK - ESCALATE IF STUCK
-    ═══════════════════════════════════════════════════════
-
-    @fallback:verification_failed
-      @run:now
-      → /rmp "alternative approach to fix ${error}" 8
-      # If verification fails, use RMP for alternative
 
   ]
 @end
@@ -100,186 +94,263 @@ $ARGUMENTS
 
 ---
 
-## Execution Trace
+## STAGE 1: Locate & Triage
 
-### Stage 1: Triage & Reproduction
+**ACTION: Parse the error and find its location**
 
 ```
-┌─────────────────────────────────────────────┐
-│ @run:now → /debug                           │
-│                                             │
-│ PHASE 1: REPRODUCE                          │
-│ - Exact reproduction steps                  │
-│ - Environment conditions                    │
-│ - Input that triggers bug                   │
-│                                             │
-│ PHASE 2: ISOLATE                            │
-│ - Minimal reproduction case                 │
-│ - Component isolation                       │
-│                                             │
-│ PHASE 3: HYPOTHESIZE                        │
-│ - Likely causes ranked                      │
-└─────────────────────────────────────────────┘
+1. Extract from error message:
+   - Error type (e.g., TypeError, ValueError, crash)
+   - File and line number (if in traceback)
+   - Key error text to search for
+
+2. Search codebase:
+   Use Grep: "error message text" or exception type
+   Use Glob: find related files by name pattern
+   Use Read: examine the file where error occurs
 ```
 
-[Execute /debug command here]
+**Error Parsing:**
+| Field | Extracted Value |
+|-------|-----------------|
+| Error Type | |
+| Location (file:line) | |
+| Key Message | |
+| Trigger Condition | |
 
-**Reproduction Status:**
-- [ ] Consistently reproducible
-- [ ] Intermittently reproducible
-- [ ] Cannot reproduce (need more info)
+**Files to Examine:**
+1. [Primary file where error occurs]
+2. [Callers of the failing function]
+3. [Related test files]
+
+**ABORT CONDITIONS:**
+- Cannot find error location → Ask for more context (stack trace, logs)
+- Error in third-party code → Focus on our code that calls it
+- Multiple unrelated errors → Triage and fix one at a time
 
 ---
 
-### Stage 2: Root Cause Analysis
+## STAGE 2: Reproduce & Isolate
 
+**ACTION: Confirm the bug and create minimal reproduction**
+
+**Reproduction Steps:**
 ```
-┌───────────────────┬───────────────────┬───────────────────┐
-│ @parallel[1/3]    │ @parallel[2/3]    │ @parallel[3/3]    │
-│                   │                   │                   │
-│ Code Path         │ Data Flow         │ State             │
-│ Analysis          │ Analysis          │ Transitions       │
-│                   │                   │                   │
-│ Where does        │ What data is      │ What state        │
-│ execution go?     │ corrupted/wrong?  │ is unexpected?    │
-└───────────────────┴───────────────────┴───────────────────┘
+1. [Step to set up environment/state]
+2. [Step to trigger the bug]
+3. [Expected vs actual result]
 ```
 
-[Execute three parallel analyses here]
+**Minimal Reproduction:**
+```python
+# Smallest code that triggers the bug
+[code snippet]
+```
+
+**Isolation Questions:**
+- [ ] Does it happen every time or intermittently?
+- [ ] Does it depend on specific input?
+- [ ] Does it depend on environment/config?
+- [ ] When did it start? (recent change?)
+
+**Reproduction Status:**
+- [ ] **Consistently reproducible** → Proceed to Stage 3
+- [ ] **Intermittent** → Add logging, gather more data
+- [ ] **Cannot reproduce** → Need more information (HALT)
+
+---
+
+## STAGE 3: Root Cause Analysis
+
+**ACTION: Analyze from three perspectives in parallel**
+
+**Code Path Analysis:**
+```
+Function call chain:
+caller()
+  → function_a()
+    → function_b() [ERROR HERE]
+      → function_c()
+
+At function_b line X, the issue is:
+[description of what goes wrong]
+```
+
+**Data Flow Analysis:**
+```
+Input: [what data comes in]
+Transform: [what happens to it]
+At point X: [data becomes invalid because...]
+Output: [wrong/missing/corrupted]
+```
+
+**State Analysis:**
+```
+Expected state: [what should be true]
+Actual state: [what is actually true]
+Discrepancy: [why they differ]
+```
 
 **Root Cause Synthesis:**
 | Hypothesis | Evidence | Confidence |
 |------------|----------|------------|
-| [Cause 1] | | High/Med/Low |
-| [Cause 2] | | High/Med/Low |
-| [Cause 3] | | High/Med/Low |
+| [Most likely] | [specific evidence] | HIGH |
+| [Alternative 1] | [evidence] | MEDIUM |
+| [Alternative 2] | [evidence] | LOW |
 
-**Selected Root Cause:** [Most likely cause with reasoning]
+**Selected Root Cause:**
+```
+The bug occurs because [X] when [condition],
+causing [Y] instead of [expected Z].
+```
 
 ---
 
-### Stage 3: Fix Implementation
+## STAGE 4: Fix Implementation
 
+**ACTION: Implement minimal fix and add regression test**
+
+**Fix Strategy:**
+- [ ] Direct fix at root cause
+- [ ] Add input validation
+- [ ] Add null/error check
+- [ ] Fix data transformation
+- [ ] Fix state management
+
+**The Fix:**
 ```
-┌─────────────────────────────────────────────┐
-│ @run:now → /template "fix for ${root_cause}"│
-│                                             │
-│ Template v0: [empty]                        │
-│     ↓                                       │
-│ Template v1: [add fix approach]             │
-│     ↓                                       │
-│ Template v2: [add edge case handling]       │
-│     ↓                                       │
-│ Template v3: [add error handling]           │
-│     ↓                                       │
-│ Final Fix: [complete implementation]        │
-└─────────────────────────────────────────────┘
+File: [path/to/file.py]
+Line: [N]
+
+BEFORE:
+[old code]
+
+AFTER:
+[new code]
+
+WHY: [explanation of why this fixes the root cause]
 ```
 
-[Execute /template for fix construction here]
+**Regression Test (ADD FIRST):**
+```python
+def test_regression_[bug_description]():
+    """Regression test for [bug description].
 
-**Security Check:**
+    Previously, [what went wrong].
+    This test ensures [what should happen].
+    """
+    # Arrange
+    [setup that triggers the bug]
+
+    # Act
+    [action that used to fail]
+
+    # Assert
+    [verification that bug is fixed]
+```
+
+**Security Check (if applicable):**
 ```
 @if:security-related
 ⚡ Skill: "security-analysis"
+
+- [ ] Injection vectors checked
+- [ ] Auth/authz implications reviewed
+- [ ] Data exposure risk assessed
+- [ ] Error messages sanitized
 ```
-- [ ] Injection prevention
-- [ ] Authentication/Authorization
-- [ ] Data validation
-- [ ] Error disclosure
 
 ---
 
-### Stage 4: Verification
+## STAGE 5: Verification
 
+**ACTION: Verify the fix works and nothing else broke**
+
+**Step 1: Bug No Longer Reproduces**
 ```
-@sequential[
-  ┌─────────────────────────────────────────┐
-  │ Step 1: Reproduce original bug          │
-  │                                         │
-  │ [Execute reproduction steps]            │
-  │                                         │
-  │ Expected: Bug should NOT reproduce      │
-  │ Result: [PASS/FAIL]                     │
-  └─────────────────────────────────────────┘
-          ↓ ◆ bug:no-longer-reproduces
-  ┌─────────────────────────────────────────┐
-  │ Step 2: Run existing tests              │
-  │                                         │
-  │ [Execute test suite]                    │
-  │                                         │
-  │ Expected: All tests pass                │
-  │ Result: [PASS/FAIL]                     │
-  └─────────────────────────────────────────┘
-          ↓ ◆ tests:pass
-  ┌─────────────────────────────────────────┐
-  │ Step 3: Add regression test             │
-  │                                         │
-  │ Test Name: test_regression_{bug_id}     │
-  │ Test Location: [file path]              │
-  │                                         │
-  │ Result: [ADDED]                         │
-  └─────────────────────────────────────────┘
-]
+Running reproduction steps...
+Command: [reproduction command]
+Result: [PASS - bug does not occur / FAIL - still occurs]
 ```
 
-[Execute verification sequence here]
-
----
-
-### Stage 5: Review
-
+**Step 2: Regression Test Passes**
 ```
-┌─────────────────────────────────────────────┐
-│ @run:now → /review                          │
-│                                             │
-│ Focus Areas:                                │
-│ - Fix correctness                           │
-│ - Side effects                              │
-│ - Performance impact                        │
-│ - Code style                                │
-│                                             │
-│ Review Status: [PENDING/APPROVED/CHANGES]   │
-└─────────────────────────────────────────────┘
+Running new test...
+Command: pytest [test_file]::[test_name] -v
+Result: [PASS / FAIL]
 ```
 
-[Execute /review here]
+**Step 3: Full Test Suite**
+```
+Running all tests...
+Command: [test command]
+Results:
+  Passed: [N]
+  Failed: [N]
+  Skipped: [N]
+Status: [PASS - all green / FAIL - regressions found]
+```
 
----
-
-### Stage 6: Fallback (if needed)
-
+**If Verification Fails:**
 ```
 @fallback:verification_failed
-┌─────────────────────────────────────────────┐
-│ Verification failed - trying alternative    │
-│                                             │
-│ → /rmp "alternative fix approach" 8         │
-│                                             │
-│ RMP will iterate until quality >= 8         │
-└─────────────────────────────────────────────┘
+→ /rmp "alternative fix for [error]" 8
+
+Attempting alternative approach...
+[document what alternative was tried]
 ```
 
-[Execute /rmp fallback if verification fails]
+---
+
+## STAGE 6: Review & Commit
+
+**ACTION: Review changes and prepare commit**
+
+**Changes Summary:**
+| File | Type | Lines Changed |
+|------|------|---------------|
+| [file] | FIX | +X -Y |
+| [file] | TEST | +X |
+
+**Review Checklist:**
+- [ ] Fix addresses root cause (not just symptoms)
+- [ ] No unintended side effects
+- [ ] Test covers the specific bug
+- [ ] Code follows project conventions
+- [ ] No debug code left in
+
+**Commit Message:**
+```
+fix: [brief description of what was fixed]
+
+[Longer description of the bug and fix]
+
+Root cause: [what caused the bug]
+Fix: [what was changed to fix it]
+
+Tested: [how it was verified]
+```
 
 ---
 
 ## Fix Summary
 
-| Stage | Status | Details |
-|-------|--------|---------|
-| Reproduction | | |
-| Root Cause | | |
-| Fix | | |
-| Verification | | |
-| Review | | |
+| Stage | Status | Key Finding |
+|-------|--------|-------------|
+| 1. Locate | | [file:line] |
+| 2. Reproduce | | [reproducible?] |
+| 3. Root Cause | | [the cause] |
+| 4. Fix | | [the solution] |
+| 5. Verify | | [tests pass?] |
+| 6. Review | | [approved?] |
 
 **Files Changed:**
-- [file1.py]: [what changed]
-- [file2.py]: [what changed]
+```
+[path/file.py] - [description of change]
+[path/test_file.py] - Added regression test
+```
 
-**Regression Test Added:**
-- [test location and name]
+**Confidence:** [HIGH/MEDIUM/LOW] - [why]
+**Risk:** [LOW/MEDIUM/HIGH] - [potential side effects]
 
-**Confidence Level:** [High/Medium/Low]
-**Risk Assessment:** [Low/Medium/High]
+**Ready for commit:** [YES/NO]

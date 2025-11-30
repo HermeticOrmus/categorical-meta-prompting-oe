@@ -20,92 +20,75 @@ $ARGUMENTS
   @sequential[
 
     ═══════════════════════════════════════════════════════
-    STAGE 1: TEST STRATEGY FORMATION
+    STAGE 1: DISCOVER TEST ENVIRONMENT
     ═══════════════════════════════════════════════════════
 
     @run:now
-    → /route {target}
-    # Analyze component to determine testing strategy
+    → Detect test framework and runner
+    → Find existing tests
+    → Identify target code to test
+
+    ◆ environment:detected
+
+    ═══════════════════════════════════════════════════════
+    STAGE 2: ANALYZE & PLAN
+    ═══════════════════════════════════════════════════════
 
     @run:now
-    → /build-prompt "test strategy for ${target}"
-    # Construct optimal testing approach
+    → Read target code
+    → Identify testable units
+    → Plan test categories
 
     ◆ strategy:defined
 
     ═══════════════════════════════════════════════════════
-    STAGE 2: PARALLEL TEST GENERATION
+    STAGE 3: GENERATE TESTS
     ═══════════════════════════════════════════════════════
 
     @parallel[
-      → Generate unit tests
-      → Generate integration tests
-      → Generate edge case tests
-      → Generate property-based tests
+      → Unit tests (functions/methods)
+      → Integration tests (interactions)
+      → Edge case tests (boundaries)
+      → Property tests (invariants)
     ]
 
     ⚡ Skill: "categorical-property-testing"
-    # Generate property-based tests from type invariants
 
     ◆ tests:generated
 
     ═══════════════════════════════════════════════════════
-    STAGE 3: SEQUENTIAL TEST EXECUTION (ORDER MATTERS)
+    STAGE 4: EXECUTE TESTS (fast → slow)
     ═══════════════════════════════════════════════════════
 
     @sequential[
-      @run:now
-      → Run unit tests
-      ◆ unit:pass OR unit:fail
-
-      @if:unit:pass
-        @run:now
-        → Run integration tests
-        ◆ integration:pass OR integration:fail
-
-      @if:integration:pass
-        @run:now
-        → Run property tests
-        ◆ property:pass OR property:fail
+      → Run unit tests first
+      @if:unit:pass → Run integration tests
+      @if:integration:pass → Run property tests
     ]
-    # Fast tests first, slow tests only if fast pass
+
+    ◆ execution:complete
 
     ═══════════════════════════════════════════════════════
-    STAGE 4: COVERAGE ANALYSIS
+    STAGE 5: COVERAGE & GAP ANALYSIS
     ═══════════════════════════════════════════════════════
 
     @run:now
-    → Collect and analyze coverage
+    → Measure coverage
+    → Identify uncovered code
+    → Generate additional tests if < 80%
 
-    @if:coverage<80
-      @run:now
-      → /template "additional tests for uncovered paths"
-      # Generate tests for uncovered code
-
-    ◆ coverage >= 80
+    ◆ coverage >= 80 OR gaps:documented
 
     ═══════════════════════════════════════════════════════
-    STAGE 5: FAILURE ANALYSIS & RETRY
+    STAGE 6: FAILURE HANDLING
     ═══════════════════════════════════════════════════════
 
     @if:any_tests_failed
-      @sequential[
-        → /debug ${failed_tests}
-        → Fix identified issues
-        @retry:2
-          → Rerun failed tests
-      ]
+      → /debug ${failures}
+      → Fix or document issues
+      @retry:2 → Rerun failed tests
 
-    ═══════════════════════════════════════════════════════
-    STAGE 6: QUALITY GATE
-    ═══════════════════════════════════════════════════════
-
-    @run:now
-    → Final quality assessment
-
-    ◆ all:tests:pass
-    ◆ coverage >= 80
-    ◆ no:flaky:tests
+    ◆ all:tests:pass OR failures:documented
 
   ]
 @end
@@ -113,255 +96,267 @@ $ARGUMENTS
 
 ---
 
-## Execution Trace
+## STAGE 1: Discover Test Environment
 
-### Stage 1: Test Strategy Formation
-
-```
-┌─────────────────────────────────────────────┐
-│ @run:now → /route                           │
-│                                             │
-│ Target: ${target}                           │
-│ Type: [function/class/module/service]       │
-│ Domain: [detected domain]                   │
-│                                             │
-│ Dependencies:                               │
-│ - [dep1]                                    │
-│ - [dep2]                                    │
-│                                             │
-│ Testing Focus:                              │
-│ - [focus area 1]                            │
-│ - [focus area 2]                            │
-└─────────────────────────────────────────────┘
-```
-
-[Analyze target for testing strategy]
+**ACTION: Detect testing infrastructure**
 
 ```
-┌─────────────────────────────────────────────┐
-│ @run:now → /build-prompt                    │
-│                                             │
-│ Test Strategy Prompt:                       │
-│ - Context: {context:tester}                 │
-│ - Mode: {mode:systematic}                   │
-│ - Format: {format:test-cases}               │
-│                                             │
-│ Strategy Output:                            │
-│ - Unit test focus: [areas]                  │
-│ - Integration points: [connections]         │
-│ - Edge cases: [identified]                  │
-│ - Properties to verify: [invariants]        │
-└─────────────────────────────────────────────┘
+1. Find test framework:
+   Use Glob: **/pytest.ini, **/setup.cfg, **/pyproject.toml, **/jest.config.*, **/package.json
+   Use Grep: "pytest", "unittest", "jest", "mocha", "go test"
+
+2. Find existing tests:
+   Use Glob: **/*test*.py, **/*.test.ts, **/*_test.go
+
+3. Identify test runner command:
+   [Detected command based on framework]
 ```
+
+**Environment Detected:**
+| Aspect | Value |
+|--------|-------|
+| Language | [Python/TypeScript/Go/...] |
+| Framework | [pytest/jest/go test/...] |
+| Test command | [e.g., `pytest -v`] |
+| Coverage command | [e.g., `pytest --cov`] |
+| Existing tests | [count] in [locations] |
+
+**Target Code:**
+| File | Functions/Classes | Current Test Coverage |
+|------|-------------------|----------------------|
+| [path] | [list] | [None/Partial/Full] |
 
 ---
 
-### Stage 2: Parallel Test Generation
+## STAGE 2: Analyze & Plan
+
+**ACTION: Read target and plan tests**
 
 ```
-@parallel[
-┌────────────────────┬────────────────────┬────────────────────┬────────────────────┐
-│ UNIT TESTS         │ INTEGRATION        │ EDGE CASES         │ PROPERTY TESTS     │
-│                    │ TESTS              │                    │                    │
-├────────────────────┼────────────────────┼────────────────────┼────────────────────┤
-│                    │                    │                    │                    │
-│ □ Happy path       │ □ API contracts    │ □ Null/empty       │ □ Invariants       │
-│ □ Error handling   │ □ DB operations    │ □ Boundaries       │ □ Commutativity    │
-│ □ Return values    │ □ External calls   │ □ Overflow         │ □ Idempotence      │
-│ □ State changes    │ □ Message queues   │ □ Unicode          │ □ Associativity    │
-│                    │                    │ □ Concurrency      │ □ Functor laws     │
-│                    │                    │                    │                    │
-│ Count: [N]         │ Count: [N]         │ Count: [N]         │ Count: [N]         │
-└────────────────────┴────────────────────┴────────────────────┴────────────────────┘
-]
+1. Read the target code:
+   Use Read: [target files]
 
-⚡ Skill: "categorical-property-testing"
-   Generating property-based tests:
-   - Functor: map(id) == id
-   - Monad: bind(return) == id
-   - Custom: [domain-specific properties]
+2. For each function/class, identify:
+   - Happy path behavior
+   - Error conditions
+   - Edge cases
+   - Dependencies to mock
 ```
 
-#### Generated Tests Summary
+**Testable Units:**
+| Unit | Type | Inputs | Outputs | Edge Cases |
+|------|------|--------|---------|------------|
+| [function_name] | function | [types] | [type] | [list] |
+| [ClassName] | class | [constructor] | [methods] | [list] |
 
-| Category | Test Count | Focus Areas |
-|----------|------------|-------------|
+**Test Plan:**
+| Category | Count | Focus |
+|----------|-------|-------|
+| Unit | [N] | [individual functions] |
+| Integration | [N] | [component interactions] |
+| Edge cases | [N] | [boundary conditions] |
+| Property | [N] | [invariants] |
+
+---
+
+## STAGE 3: Generate Tests
+
+**ACTION: Write tests for each category**
+
+### Unit Tests
+```python
+# Test file: [path/test_target.py]
+
+def test_[function]_happy_path():
+    """Test [function] with normal input."""
+    # Arrange
+    [setup]
+    # Act
+    result = [function call]
+    # Assert
+    assert result == [expected]
+
+def test_[function]_error_case():
+    """Test [function] raises on invalid input."""
+    with pytest.raises([ExceptionType]):
+        [function call with bad input]
+```
+
+### Integration Tests
+```python
+def test_[component]_integration():
+    """Test [component] works with [dependency]."""
+    # Arrange
+    [setup components]
+    # Act
+    [trigger interaction]
+    # Assert
+    [verify end-to-end behavior]
+```
+
+### Edge Case Tests
+```python
+def test_[function]_empty_input():
+    """Test [function] handles empty input."""
+    assert [function]([]) == [expected]
+
+def test_[function]_boundary():
+    """Test [function] at boundary values."""
+    assert [function](MAX_VALUE) == [expected]
+    assert [function](MIN_VALUE) == [expected]
+```
+
+### Property Tests (⚡ categorical-property-testing)
+```python
+from hypothesis import given, strategies as st
+
+@given(st.lists(st.integers()))
+def test_[function]_property(input_list):
+    """[Property description]."""
+    result = [function](input_list)
+    assert [property holds]  # e.g., len(result) == len(input_list)
+```
+
+**Generated Tests Summary:**
+| Category | Count | File |
+|----------|-------|------|
 | Unit | | |
 | Integration | | |
-| Edge Case | | |
+| Edge case | | |
 | Property | | |
 | **Total** | | |
 
 ---
 
-### Stage 3: Sequential Test Execution
+## STAGE 4: Execute Tests
 
-```
-@sequential[
-  ┌─────────────────────────────────────────────┐
-  │ STEP 1: Unit Tests                          │
-  │                                             │
-  │ Command: [test runner command]              │
-  │                                             │
-  │ Results:                                    │
-  │ ✓ Passed: [N]                               │
-  │ ✗ Failed: [N]                               │
-  │ ○ Skipped: [N]                              │
-  │                                             │
-  │ Time: [duration]                            │
-  │ Status: [PASS/FAIL]                         │
-  └─────────────────────────────────────────────┘
-          ↓ ◆ unit:pass
-  ┌─────────────────────────────────────────────┐
-  │ STEP 2: Integration Tests                   │
-  │                                             │
-  │ Command: [test runner command]              │
-  │                                             │
-  │ Results:                                    │
-  │ ✓ Passed: [N]                               │
-  │ ✗ Failed: [N]                               │
-  │ ○ Skipped: [N]                              │
-  │                                             │
-  │ Time: [duration]                            │
-  │ Status: [PASS/FAIL]                         │
-  └─────────────────────────────────────────────┘
-          ↓ ◆ integration:pass
-  ┌─────────────────────────────────────────────┐
-  │ STEP 3: Property Tests                      │
-  │                                             │
-  │ Command: [hypothesis/quickcheck command]    │
-  │                                             │
-  │ Results:                                    │
-  │ ✓ Properties verified: [N]                  │
-  │ ✗ Counterexamples found: [N]                │
-  │                                             │
-  │ Time: [duration]                            │
-  │ Status: [PASS/FAIL]                         │
-  └─────────────────────────────────────────────┘
-]
+**ACTION: Run tests in order (fast → slow)**
+
+### Step 1: Unit Tests
+```bash
+Command: [test command for unit tests]
 ```
 
-[Execute tests in sequence]
+**Results:**
+| Metric | Value |
+|--------|-------|
+| Passed | |
+| Failed | |
+| Skipped | |
+| Time | |
+| Status | [PASS/FAIL] |
+
+### Step 2: Integration Tests (if unit passed)
+```bash
+Command: [test command for integration tests]
+```
+
+**Results:**
+| Metric | Value |
+|--------|-------|
+| Passed | |
+| Failed | |
+| Time | |
+| Status | [PASS/FAIL] |
+
+### Step 3: Property Tests (if integration passed)
+```bash
+Command: [test command for property tests]
+```
+
+**Results:**
+| Metric | Value |
+|--------|-------|
+| Properties verified | |
+| Counterexamples | |
+| Status | [PASS/FAIL] |
 
 ---
 
-### Stage 4: Coverage Analysis
+## STAGE 5: Coverage & Gap Analysis
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    COVERAGE REPORT                               │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│ Line Coverage:     [████████░░] 82%                             │
-│ Branch Coverage:   [███████░░░] 75%                             │
-│ Function Coverage: [█████████░] 90%                             │
-│                                                                  │
-├─────────────────────────────────────────────────────────────────┤
-│ Uncovered Areas:                                                 │
-│                                                                  │
-│ file1.py:45-52    [error handling path]                         │
-│ file2.py:120-125  [edge case branch]                            │
-│ file3.py:78       [exception handler]                           │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+**ACTION: Measure and analyze coverage**
+
+```bash
+Command: [coverage command, e.g., pytest --cov=src --cov-report=term-missing]
 ```
 
-```
-@if:coverage<80
-┌─────────────────────────────────────────────┐
-│ Coverage below 80% - generating more tests  │
-│                                             │
-│ → /template "tests for uncovered paths"     │
-│                                             │
-│ Targeting:                                  │
-│ - [uncovered path 1]                        │
-│ - [uncovered path 2]                        │
-└─────────────────────────────────────────────┘
+**Coverage Report:**
+| Metric | Value | Target | Status |
+|--------|-------|--------|--------|
+| Line coverage | X% | 80% | [PASS/FAIL] |
+| Branch coverage | X% | 70% | [PASS/FAIL] |
+| Function coverage | X% | 90% | [PASS/FAIL] |
+
+**Uncovered Code:**
+| File | Lines | Reason | Additional Test Needed |
+|------|-------|--------|------------------------|
+| [path] | [N-M] | [why not covered] | [test to add] |
+
+**Gap Filling (if < 80%):**
+```python
+# Additional test for uncovered path
+def test_[uncovered_scenario]():
+    """Cover [description of uncovered code]."""
+    [test implementation]
 ```
 
 ---
 
-### Stage 5: Failure Analysis & Retry
+## STAGE 6: Failure Handling
+
+**ACTION: Debug and fix any failures**
 
 ```
 @if:any_tests_failed
-┌─────────────────────────────────────────────┐
-│ Test failures detected - analyzing          │
-│                                             │
-│ Failed Tests:                               │
-│ 1. [test_name]: [failure reason]            │
-│ 2. [test_name]: [failure reason]            │
-│                                             │
-│ → /debug ${failed_tests}                    │
-│                                             │
-│ Analysis:                                   │
-│ - Root cause: [identified cause]            │
-│ - Fix: [proposed fix]                       │
-└─────────────────────────────────────────────┘
 
-@retry:2
-┌─────────────────────────────────────────────┐
-│ Retry attempt ${retry.count}/2              │
-│                                             │
-│ Rerunning failed tests...                   │
-│                                             │
-│ Result: [PASS/FAIL]                         │
-└─────────────────────────────────────────────┘
+Failed Test Analysis:
+| Test | Error | Root Cause | Fix |
+|------|-------|------------|-----|
+| [name] | [error msg] | [why] | [how to fix] |
 ```
 
-[Debug and retry failed tests if any]
+**Retry Log:**
+| Attempt | Tests Run | Passed | Failed |
+|---------|-----------|--------|--------|
+| 1 | | | |
+| 2 | | | |
 
----
-
-### Stage 6: Quality Gate
-
+**Unresolved Failures (if any):**
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      QUALITY GATE                                │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│ ◆ all:tests:pass                                                │
-│   Unit Tests:        [✓ PASS / ✗ FAIL]                          │
-│   Integration Tests: [✓ PASS / ✗ FAIL]                          │
-│   Property Tests:    [✓ PASS / ✗ FAIL]                          │
-│                                                                  │
-│ ◆ coverage >= 80                                                │
-│   Current Coverage:  [X]%  [✓ PASS / ✗ FAIL]                    │
-│                                                                  │
-│ ◆ no:flaky:tests                                                │
-│   Flaky Tests Found: [N]   [✓ PASS / ✗ FAIL]                    │
-│                                                                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   QUALITY GATE STATUS: [✓ PASSED / ✗ FAILED]                    │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+Test: [name]
+Issue: [description]
+Blocking: [YES/NO - why it can't be fixed now]
 ```
 
 ---
 
 ## Test Summary
 
-| Test Type | Total | Passed | Failed | Skipped | Time |
-|-----------|-------|--------|--------|---------|------|
-| Unit | | | | | |
-| Integration | | | | | |
-| Edge Case | | | | | |
-| Property | | | | | |
-| **Total** | | | | | |
+**Results:**
+| Category | Total | Passed | Failed | Coverage |
+|----------|-------|--------|--------|----------|
+| Unit | | | | |
+| Integration | | | | |
+| Edge Case | | | | |
+| Property | | | | |
+| **Total** | | | | **X%** |
 
-**Coverage:**
-- Line: X%
-- Branch: X%
-- Function: X%
+**Quality Gate:**
+- [ ] All tests pass
+- [ ] Coverage >= 80%
+- [ ] No flaky tests detected
 
-**Quality Gate:** [PASSED / FAILED]
+**Status:** [PASSED / FAILED - list blockers]
+
+**Test Files Created:**
+```
+[list of new test files with paths]
+```
 
 **Skills Used:**
 - ⚡ categorical-property-testing
 
-**Commands Invoked:**
-- /route (strategy)
-- /build-prompt (test planning)
-- /template (gap coverage)
-- /debug (failure analysis)
+**Commands Used:**
+- [test runner command]
+- [coverage command]

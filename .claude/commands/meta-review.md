@@ -20,64 +20,61 @@ $ARGUMENTS
   @sequential[
 
     ═══════════════════════════════════════════════════════
-    STAGE 1: CONTEXT GATHERING
+    STAGE 1: READ & UNDERSTAND
     ═══════════════════════════════════════════════════════
 
     @run:now
-    → /route {target}
-    # Determine domain and appropriate review focus
+    → Read all files/changes to review
+    → Identify domain and complexity
+    → Note key areas of concern
 
-    ◆ domain:identified
+    ◆ context:understood
 
     ═══════════════════════════════════════════════════════
     STAGE 2: PARALLEL SPECIALIZED REVIEWS
     ═══════════════════════════════════════════════════════
 
     @parallel[
-      → /review:correctness ${target}
-      → /review:security ${target}
-      → /review:performance ${target}
-      → /review:maintainability ${target}
+      → Correctness pass
+      → Security pass
+      → Performance pass
+      → Maintainability pass
     ]
-    # Four specialized reviewers working simultaneously
 
-    ⚡ Skill: "categorical-property-testing"
-    # Verify type-level properties
+    ⚡ Skill: "categorical-property-testing" (if applicable)
 
     ◆ all:reviews:complete
 
     ═══════════════════════════════════════════════════════
-    STAGE 3: SYNTHESIS & PRIORITIZATION
+    STAGE 3: SYNTHESIZE & PRIORITIZE
     ═══════════════════════════════════════════════════════
 
     @run:now
-    → Synthesize findings from all reviewers
-    → Prioritize by severity: Critical > High > Medium > Low
-    → Identify conflicts between reviewer recommendations
+    → Merge findings, remove duplicates
+    → Rank by severity
+    → Resolve conflicts between reviewers
 
     ◆ findings:synthesized
 
     ═══════════════════════════════════════════════════════
-    STAGE 4: CONDITIONAL DEEP DIVES
+    STAGE 4: DEEP DIVE (if critical issues)
     ═══════════════════════════════════════════════════════
 
     @if:critical_issues>0
-      @run:now
       → /debug ${critical_issues}
-      # Deep dive into critical issues
 
     @if:security_issues>0
       ⚡ Skill: "security-analysis"
-      # Security-focused deep analysis
 
     ═══════════════════════════════════════════════════════
-    STAGE 5: FINAL VERDICT
+    STAGE 5: VERDICT
     ═══════════════════════════════════════════════════════
 
     @run:now
-    → Compile final review decision
+    → Decide: APPROVE / REQUEST CHANGES / REJECT
+    → List required vs optional changes
 
-    ◆ decision:approve OR decision:request_changes OR decision:reject
+    ◆ decision:made
 
   ]
 @end
@@ -85,249 +82,263 @@ $ARGUMENTS
 
 ---
 
-## Execution Trace
+## STAGE 1: Read & Understand
 
-### Stage 1: Context Gathering
+**ACTION: Read all code under review**
 
 ```
-┌─────────────────────────────────────────────┐
-│ @run:now → /route                           │
-│                                             │
-│ Target: ${target}                           │
-│ Detected Domain: [domain]                   │
-│ Review Focus: [based on domain]             │
-│                                             │
-│ File Type: [language/framework]             │
-│ Change Size: [lines/files affected]         │
-└─────────────────────────────────────────────┘
+1. Identify files to review:
+   Use Glob/Read to examine: [file patterns or specific files]
+
+2. For each file, note:
+   - Purpose and responsibility
+   - Key functions/classes
+   - Dependencies and imports
+   - Recent changes (if reviewing a diff)
 ```
 
-[Analyze target and determine review focus]
+**Files Under Review:**
+| File | Lines | Purpose | Concern Level |
+|------|-------|---------|---------------|
+| [path] | [N] | [what it does] | [Low/Med/High] |
+
+**Domain Classification:**
+- Primary domain: [ALGORITHM|API|DATABASE|SECURITY|...]
+- Language/Framework: [Python|TypeScript|Go|...]
+- Test coverage: [exists|partial|missing]
+
+**Initial Impressions:**
+- [First observation about the code]
+- [Second observation]
+- [Areas that need closer examination]
 
 ---
 
-### Stage 2: Parallel Specialized Reviews
+## STAGE 2: Parallel Specialized Reviews
+
+**ACTION: Run four review passes simultaneously**
+
+### 2A. Correctness Review
+
+**Question: Does the code work correctly?**
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| Logic errors | ✓/✗ | [specific issue or "None"] |
+| Edge cases handled | ✓/✗ | [missing cases] |
+| Error handling | ✓/✗ | [issues] |
+| Null/undefined safety | ✓/✗ | [issues] |
+| Type correctness | ✓/✗ | [issues] |
+| Contract violations | ✓/✗ | [issues] |
+
+**Correctness Findings:**
+```
+[file:line] - [severity] - [description]
+[file:line] - [severity] - [description]
+```
+
+**Score:** [X]/10
+
+---
+
+### 2B. Security Review
+
+**Question: Is the code secure?**
+
+| OWASP Check | Status | Finding |
+|-------------|--------|---------|
+| Injection (SQL, Command, etc.) | ✓/✗ | |
+| Broken Authentication | ✓/✗ | |
+| Sensitive Data Exposure | ✓/✗ | |
+| XXE | ✓/✗ | |
+| Broken Access Control | ✓/✗ | |
+| Security Misconfiguration | ✓/✗ | |
+| XSS | ✓/✗ | |
+| Insecure Deserialization | ✓/✗ | |
+| Known Vulnerable Components | ✓/✗ | |
+| Insufficient Logging | ✓/✗ | |
+
+**Security Findings:**
+```
+[file:line] - [severity] - [vulnerability type] - [description]
+```
+
+**Score:** [X]/10
+
+---
+
+### 2C. Performance Review
+
+**Question: Is the code efficient?**
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| Time complexity | O(?) | [assessment] |
+| Space complexity | O(?) | [assessment] |
+| N+1 queries | ✓/✗ | |
+| Unnecessary computation | ✓/✗ | |
+| Resource leaks | ✓/✗ | |
+| Blocking operations | ✓/✗ | |
+| Caching opportunities | ✓/✗ | |
+
+**Performance Findings:**
+```
+[file:line] - [impact] - [description] - [suggested fix]
+```
+
+**Score:** [X]/10
+
+---
+
+### 2D. Maintainability Review
+
+**Question: Is the code maintainable?**
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| Readability | ✓/✗ | |
+| Naming clarity | ✓/✗ | |
+| Function length (<30 lines) | ✓/✗ | |
+| Single responsibility | ✓/✗ | |
+| DRY violations | ✓/✗ | |
+| Documentation | ✓/✗ | |
+| Test coverage | ✓/✗ | |
+| Modularity | ✓/✗ | |
+
+**Maintainability Findings:**
+```
+[file:line] - [severity] - [issue] - [suggestion]
+```
+
+**Score:** [X]/10
+
+---
+
+### Property Testing (if applicable)
 
 ```
-@parallel[
-┌────────────────────┬────────────────────┬────────────────────┬────────────────────┐
-│ CORRECTNESS        │ SECURITY           │ PERFORMANCE        │ MAINTAINABILITY    │
-│ REVIEWER           │ REVIEWER           │ REVIEWER           │ REVIEWER           │
-├────────────────────┼────────────────────┼────────────────────┼────────────────────┤
-│                    │                    │                    │                    │
-│ □ Logic errors     │ □ Injection        │ □ Time complexity  │ □ Readability      │
-│ □ Edge cases       │ □ Auth bypass      │ □ Space complexity │ □ DRY violations   │
-│ □ Type safety      │ □ Data exposure    │ □ Resource leaks   │ □ Naming           │
-│ □ Error handling   │ □ Input validation │ □ N+1 queries      │ □ Documentation    │
-│ □ Contract         │ □ Crypto issues    │ □ Caching          │ □ Test coverage    │
-│   violations       │ □ OWASP Top 10     │ □ Async issues     │ □ Modularity       │
-│                    │                    │                    │                    │
-│ Score: /10         │ Score: /10         │ Score: /10         │ Score: /10         │
-└────────────────────┴────────────────────┴────────────────────┴────────────────────┘
-]
-
 ⚡ Skill: "categorical-property-testing"
-   - Functor laws preserved?
-   - Monad laws preserved?
-   - Type invariants maintained?
-```
 
-#### Correctness Review
-```
-┌─────────────────────────────────────────────┐
-│ {context:reviewer}                          │
-│ Focus: Does the code do what it should?     │
-│                                             │
-│ Checking:                                   │
-│ - [ ] Logic correctness                     │
-│ - [ ] Edge case handling                    │
-│ - [ ] Error scenarios                       │
-│ - [ ] Contract adherence                    │
-│                                             │
-│ Findings:                                   │
-│ - [finding 1]                               │
-│ - [finding 2]                               │
-│                                             │
-│ Score: [X]/10                               │
-└─────────────────────────────────────────────┘
-```
+Properties to verify:
+- [ ] [Property 1]: [invariant that should hold]
+- [ ] [Property 2]: [invariant that should hold]
 
-#### Security Review
-```
-┌─────────────────────────────────────────────┐
-│ {context:security-expert}                   │
-│ Focus: Is the code secure?                  │
-│                                             │
-│ Checking:                                   │
-│ - [ ] Injection vulnerabilities             │
-│ - [ ] Authentication/Authorization          │
-│ - [ ] Data validation                       │
-│ - [ ] Sensitive data handling               │
-│ - [ ] OWASP Top 10                          │
-│                                             │
-│ Findings:                                   │
-│ - [finding 1]                               │
-│ - [finding 2]                               │
-│                                             │
-│ Score: [X]/10                               │
-└─────────────────────────────────────────────┘
-```
-
-#### Performance Review
-```
-┌─────────────────────────────────────────────┐
-│ {context:performance-expert}                │
-│ Focus: Is the code efficient?               │
-│                                             │
-│ Checking:                                   │
-│ - [ ] Time complexity                       │
-│ - [ ] Space complexity                      │
-│ - [ ] Resource management                   │
-│ - [ ] Async/concurrent correctness          │
-│ - [ ] Database query efficiency             │
-│                                             │
-│ Findings:                                   │
-│ - [finding 1]                               │
-│ - [finding 2]                               │
-│                                             │
-│ Score: [X]/10                               │
-└─────────────────────────────────────────────┘
-```
-
-#### Maintainability Review
-```
-┌─────────────────────────────────────────────┐
-│ {context:maintainability-expert}            │
-│ Focus: Is the code maintainable?            │
-│                                             │
-│ Checking:                                   │
-│ - [ ] Readability                           │
-│ - [ ] DRY principle                         │
-│ - [ ] Naming conventions                    │
-│ - [ ] Documentation                         │
-│ - [ ] Test coverage                         │
-│ - [ ] Modularity                            │
-│                                             │
-│ Findings:                                   │
-│ - [finding 1]                               │
-│ - [finding 2]                               │
-│                                             │
-│ Score: [X]/10                               │
-└─────────────────────────────────────────────┘
+Property test results:
+- [Property 1]: [HOLDS / VIOLATED at file:line]
 ```
 
 ---
 
-### Stage 3: Synthesis & Prioritization
+## STAGE 3: Synthesize & Prioritize
 
-```
-┌─────────────────────────────────────────────┐
-│ SYNTHESIZING REVIEW FINDINGS                │
-│                                             │
-│ Total Findings: [N]                         │
-│                                             │
-│ By Severity:                                │
-│ 🔴 Critical: [count]                        │
-│ 🟠 High:     [count]                        │
-│ 🟡 Medium:   [count]                        │
-│ 🟢 Low:      [count]                        │
-│                                             │
-│ By Category:                                │
-│ - Correctness: [count]                      │
-│ - Security:    [count]                      │
-│ - Performance: [count]                      │
-│ - Maintainability: [count]                  │
-└─────────────────────────────────────────────┘
-```
+**ACTION: Merge all findings and prioritize**
 
-**Prioritized Findings:**
+**All Findings by Severity:**
 
-| # | Severity | Category | Finding | Recommendation |
-|---|----------|----------|---------|----------------|
-| 1 | 🔴 Critical | | | |
-| 2 | 🟠 High | | | |
-| 3 | 🟡 Medium | | | |
+🔴 **CRITICAL** (blocks approval):
+| # | Category | File:Line | Issue | Required Fix |
+|---|----------|-----------|-------|--------------|
+| 1 | | | | |
+
+🟠 **HIGH** (should fix before merge):
+| # | Category | File:Line | Issue | Suggested Fix |
+|---|----------|-----------|-------|---------------|
+| 1 | | | | |
+
+🟡 **MEDIUM** (nice to fix):
+| # | Category | File:Line | Issue | Suggestion |
+|---|----------|-----------|-------|------------|
+| 1 | | | | |
+
+🟢 **LOW** (optional improvements):
+| # | Category | File:Line | Issue | Suggestion |
+|---|----------|-----------|-------|------------|
+| 1 | | | | |
 
 **Conflicts Between Reviewers:**
-- [If performance says X but maintainability says Y]
+```
+If any: [e.g., "Performance suggests inlining but Maintainability prefers extraction"]
+Resolution: [which to prefer and why]
+```
 
 ---
 
-### Stage 4: Conditional Deep Dives
+## STAGE 4: Deep Dive (if needed)
+
+**Triggered if critical or security issues found**
 
 ```
 @if:critical_issues>0
-┌─────────────────────────────────────────────┐
-│ Critical issues found - deep dive required  │
-│                                             │
-│ → /debug ${critical_issues}                 │
-│                                             │
-│ Deep analysis of:                           │
-│ - [critical issue 1]                        │
-│ - [critical issue 2]                        │
-└─────────────────────────────────────────────┘
 
-@if:security_issues>0
-┌─────────────────────────────────────────────┐
-│ Security issues found - specialist required │
-│                                             │
-│ ⚡ Skill: "security-analysis"               │
-│                                             │
-│ Security deep dive:                         │
-│ - Exploitation analysis                     │
-│ - Remediation recommendations               │
-│ - Defense in depth suggestions              │
-└─────────────────────────────────────────────┘
+Critical Issue Analysis:
+Issue: [description]
+Location: [file:line]
+Impact: [what could go wrong]
+Root cause: [why this happened]
+Fix: [specific code change needed]
 ```
 
-[Execute conditional deep dives if triggered]
+```
+@if:security_issues>0
+⚡ Skill: "security-analysis"
+
+Security Deep Dive:
+Vulnerability: [type]
+Attack vector: [how it could be exploited]
+Impact: [damage potential]
+Remediation: [specific fix]
+Additional hardening: [defense in depth recommendations]
+```
 
 ---
 
-### Stage 5: Final Verdict
+## STAGE 5: Final Verdict
 
+**Overall Scores:**
+| Dimension | Score | Weight | Weighted |
+|-----------|-------|--------|----------|
+| Correctness | /10 | 40% | |
+| Security | /10 | 30% | |
+| Performance | /10 | 15% | |
+| Maintainability | /10 | 15% | |
+| **TOTAL** | | 100% | **/10** |
+
+**Decision:**
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                       REVIEW DECISION                            │
-├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  □ APPROVE         □ REQUEST CHANGES        □ REJECT            │
+│   [ ] ✅ APPROVE - Ready to merge                               │
 │                                                                  │
-├─────────────────────────────────────────────────────────────────┤
-│ Overall Scores:                                                  │
+│   [ ] 🔄 REQUEST CHANGES - Fix issues below first               │
 │                                                                  │
-│ Correctness:      [██████████] X/10                             │
-│ Security:         [██████████] X/10                             │
-│ Performance:      [██████████] X/10                             │
-│ Maintainability:  [██████████] X/10                             │
-│ ─────────────────────────────────                               │
-│ COMPOSITE:        [██████████] X/10                             │
+│   [ ] ❌ REJECT - Fundamental issues, needs redesign            │
 │                                                                  │
-├─────────────────────────────────────────────────────────────────┤
-│ Required Changes Before Approval:                                │
-│ - [change 1]                                                     │
-│ - [change 2]                                                     │
-│                                                                  │
-│ Suggested Improvements (Optional):                               │
-│ - [improvement 1]                                                │
-│ - [improvement 2]                                                │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+**Required Changes (must fix):**
+1. [Critical/High issue 1 with location and fix]
+2. [Critical/High issue 2 with location and fix]
+
+**Suggested Improvements (optional):**
+1. [Medium/Low improvement 1]
+2. [Medium/Low improvement 2]
 
 ---
 
 ## Review Summary
 
-| Dimension | Score | Critical Issues | Action Items |
-|-----------|-------|-----------------|--------------|
-| Correctness | /10 | | |
-| Security | /10 | | |
-| Performance | /10 | | |
-| Maintainability | /10 | | |
-| **Overall** | /10 | | |
-
+**Target:** $ARGUMENTS
 **Decision:** [APPROVE / REQUEST CHANGES / REJECT]
+**Composite Score:** [X]/10
+
+**Key Issues:**
+- [Most important finding 1]
+- [Most important finding 2]
+
+**Strengths:**
+- [What the code does well]
 
 **Skills Used:**
-- ⚡ categorical-property-testing
-- ⚡ security-analysis (if triggered)
+- ⚡ categorical-property-testing [if used]
+- ⚡ security-analysis [if used]

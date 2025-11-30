@@ -20,31 +20,39 @@ $ARGUMENTS
   @sequential[
 
     ═══════════════════════════════════════════════════════
+    STAGE 0: CODEBASE EXPLORATION (REQUIRED FIRST)
+    ═══════════════════════════════════════════════════════
+
+    @run:now
+    → Explore codebase to understand existing patterns
+    → Identify where new feature fits
+    → Find similar implementations to reference
+
+    ◆ context:gathered
+
+    ═══════════════════════════════════════════════════════
     STAGE 1: ANALYSIS & PLANNING
     ═══════════════════════════════════════════════════════
 
     @run:now
     → /route {feature}
-    # Analyze task type and complexity
+    → /build-prompt "design ${feature}"
 
     ◆ routing:complete
 
-    @run:now
-    → /build-prompt "design ${feature}"
-    # Construct optimal prompt for design phase
-
     ═══════════════════════════════════════════════════════
-    STAGE 2: PARALLEL DESIGN EXPLORATION
+    STAGE 2: DESIGN (with synthesis)
     ═══════════════════════════════════════════════════════
 
     @parallel[
-      → /template "architecture for ${feature}"
-      → /template "data model for ${feature}"
-      → /template "interface contract for ${feature}"
+      → Design architecture
+      → Design data model
+      → Design interface
     ]
-    # Explore design dimensions concurrently
+    → Synthesize into cohesive design
+    → Validate design against existing patterns
 
-    ◆ all:templates:complete
+    ◆ design:validated
 
     ═══════════════════════════════════════════════════════
     STAGE 3: IMPLEMENTATION
@@ -52,39 +60,32 @@ $ARGUMENTS
 
     @run:now
     → /compose analyze plan implement
-    # Execute implementation pipeline
+    → Write code following project conventions
 
     ⚡ Skill: "categorical-property-testing"
-    # Ensure type-safe properties during implementation
 
     ◆ implementation:complete
 
     ═══════════════════════════════════════════════════════
-    STAGE 4: QUALITY ASSURANCE (PARALLEL)
+    STAGE 4: QUALITY ASSURANCE
     ═══════════════════════════════════════════════════════
 
     @parallel[
-      → /review ${implementation}
-      → /meta-test ${implementation}
+      → /review ${files_changed}
+      → /meta-test ${component}
     ]
-    # Run review and testing concurrently
 
     ◆ quality >= 7 AND tests:pass
 
     ═══════════════════════════════════════════════════════
-    STAGE 5: REFINEMENT LOOP
+    STAGE 5: REFINEMENT (max 3 iterations)
     ═══════════════════════════════════════════════════════
 
-    @loop:until:quality>=8[
-      @if:quality<7
-        → /rmp ${implementation} 8
-      @if:tests:failing
-        → /debug ${test_failures}
+    @loop:until:quality>=8:max:3[
+      → /rmp "improve ${weakness}" 8
     ]
 
     ◆ quality >= 8
-    ◆ tests:pass
-    ◆ review:approved
 
   ]
 @end
@@ -92,136 +93,195 @@ $ARGUMENTS
 
 ---
 
-## Execution Trace
+## STAGE 0: Codebase Exploration
 
-### Stage 1: Analysis & Planning
+**ACTION: Search for related patterns**
 ```
-┌─────────────────────────────────────────────┐
-│ @run:now → /route                           │
-│                                             │
-│ Task Type: [detected]                       │
-│ Complexity: [low/medium/high]               │
-│ Domain: [detected domain]                   │
-│ Routed Strategy: [selected approach]        │
-└─────────────────────────────────────────────┘
+Use Glob to find: **/*.{py,ts,js,go} matching feature keywords
+Use Grep to search: existing implementations of similar features
+Use Read to examine: 2-3 most relevant files
 ```
 
-[Execute /route analysis here]
+**Exploration Results:**
+| What | Where | Relevance |
+|------|-------|-----------|
+| Similar feature | [file:line] | [how it helps] |
+| Pattern to follow | [file:line] | [convention to use] |
+| Code to extend | [file:line] | [extension point] |
 
-```
-┌─────────────────────────────────────────────┐
-│ @run:now → /build-prompt                    │
-│                                             │
-│ Context: {context:expert}                   │
-│ Mode: {mode:multi}                          │
-│ Format: {format:structured}                 │
-│ Quality: {quality:completeness}             │
-└─────────────────────────────────────────────┘
-```
-
-[Execute /build-prompt here]
+**Project Conventions Detected:**
+- File structure: [pattern]
+- Naming: [pattern]
+- Testing: [pattern]
 
 ---
 
-### Stage 2: Parallel Design Exploration
+## STAGE 1: Analysis & Planning
 
+**ACTION: Analyze feature requirements**
 ```
-┌───────────────────┬───────────────────┬───────────────────┐
-│ @parallel[1/3]    │ @parallel[2/3]    │ @parallel[3/3]    │
-│                   │                   │                   │
-│ Architecture      │ Data Model        │ Interface         │
-│ Template          │ Template          │ Template          │
-│                   │                   │                   │
-│ [running...]      │ [running...]      │ [running...]      │
-└───────────────────┴───────────────────┴───────────────────┘
+1. Parse the feature request for:
+   - Core functionality needed
+   - Inputs and outputs
+   - Error cases
+   - Edge cases
+
+2. Classify:
+   - Domain: [ALGORITHM|API|DATABASE|SECURITY|...]
+   - Complexity: [Low|Medium|High]
+   - Estimated scope: [files to create/modify]
 ```
 
-[Execute three /template calls in parallel here]
+**Feature Analysis:**
+| Aspect | Value | Notes |
+|--------|-------|-------|
+| Domain | | |
+| Complexity | | |
+| New files needed | | |
+| Files to modify | | |
+| Dependencies | | |
 
-**Synthesized Design:**
-- Architecture: [result]
-- Data Model: [result]
-- Interface: [result]
+**ABORT CONDITIONS:**
+- Feature conflicts with existing code → Ask for clarification
+- Scope too large → Break into smaller tasks
+- Missing dependencies → List what's needed first
 
 ---
 
-### Stage 3: Implementation
+## STAGE 2: Design
 
+**ACTION: Create design artifacts**
+
+**Architecture:**
 ```
-┌─────────────────────────────────────────────┐
-│ @run:now → /compose analyze plan implement  │
-│                                             │
-│ Pipeline: analyze → plan → implement        │
-│                                             │
-│ ⚡ Skill: "categorical-property-testing"    │
-│    Ensuring type-safe construction          │
-└─────────────────────────────────────────────┘
+[Draw component diagram or describe structure]
+
+Component A
+    ↓ uses
+Component B
+    ↓ calls
+Component C
 ```
 
-[Execute /compose pipeline here]
+**Data Model:**
+```
+[Define data structures]
+
+class/type Name:
+    field1: type
+    field2: type
+```
+
+**Interface Contract:**
+```
+[Define public API]
+
+function_name(param1: type, param2: type) -> return_type
+    """What it does, when to use it"""
+```
+
+**Design Validation Checklist:**
+- [ ] Follows existing patterns from Stage 0
+- [ ] No circular dependencies
+- [ ] Clear separation of concerns
+- [ ] Testable components
 
 ---
 
-### Stage 4: Quality Assurance
+## STAGE 3: Implementation
 
-```
-┌─────────────────────────┬─────────────────────────┐
-│ @parallel[1/2]          │ @parallel[2/2]          │
-│                         │                         │
-│ → /review               │ → /meta-test            │
-│                         │                         │
-│ Code quality check      │ Test coverage check     │
-│ Security review         │ Property verification   │
-│ Style conformance       │ Edge case handling      │
-└─────────────────────────┴─────────────────────────┘
-```
+**ACTION: Write code**
 
-[Execute /review and /meta-test in parallel here]
+**Files to Create:**
+| File | Purpose | Template |
+|------|---------|----------|
+| [path/file.py] | [purpose] | [similar to existing X] |
 
-**Quality Gate:**
-| Check | Status | Score |
-|-------|--------|-------|
-| Review | | |
-| Tests | | |
-| Quality | | /10 |
+**Files to Modify:**
+| File | Changes | Lines |
+|------|---------|-------|
+| [path/file.py] | [what changes] | [approx] |
+
+**Implementation Order:**
+1. [First file - foundation]
+2. [Second file - core logic]
+3. [Third file - integration]
+4. [Tests - verify each step]
+
+**Property Invariants (⚡ categorical-property-testing):**
+- [ ] [Property 1]: [description]
+- [ ] [Property 2]: [description]
 
 ---
 
-### Stage 5: Refinement (if needed)
+## STAGE 4: Quality Assurance
 
-```
-@loop:until:quality>=8
-┌─────────────────────────────────────────────┐
-│ Iteration ${loop.iteration}                 │
-│                                             │
-│ Current Quality: ${quality.score}           │
-│ Target Quality: 8                           │
-│                                             │
-│ @if:quality<7 → /rmp refinement             │
-│ @if:tests:failing → /debug failures         │
-└─────────────────────────────────────────────┘
-```
+**ACTION: Run review and tests in parallel**
 
-[Execute refinement loop if quality < 8]
+**Review Focus:**
+- [ ] Correctness: Does it do what's requested?
+- [ ] Security: Any vulnerabilities introduced?
+- [ ] Performance: Any obvious inefficiencies?
+- [ ] Style: Follows project conventions?
+
+**Test Checklist:**
+- [ ] Unit tests for new functions
+- [ ] Integration test for feature flow
+- [ ] Edge case coverage
+- [ ] Existing tests still pass
+
+**Quality Scores:**
+| Dimension | Score | Issue Count |
+|-----------|-------|-------------|
+| Correctness | /10 | |
+| Completeness | /10 | |
+| Code Quality | /10 | |
+| Test Coverage | /10 | |
+| **Weighted** | /10 | |
+
+---
+
+## STAGE 5: Refinement
+
+**ACTION: Iterate if quality < 8**
+
+**Iteration 1:**
+- Weakness identified: [what needs improvement]
+- Fix applied: [what was changed]
+- New score: [X]/10
+
+**Iteration 2 (if needed):**
+- Weakness identified: [what needs improvement]
+- Fix applied: [what was changed]
+- New score: [X]/10
+
+**MAX ITERATIONS: 3** - If still < 8, document remaining issues
 
 ---
 
 ## Final Summary
 
-| Stage | Commands Used | Status | Time |
-|-------|---------------|--------|------|
-| Analysis | /route, /build-prompt | | |
-| Design | /template ×3 (parallel) | | |
-| Implementation | /compose | | |
-| QA | /review, /meta-test (parallel) | | |
-| Refinement | /rmp, /debug (as needed) | | |
+| Stage | Status | Key Outputs |
+|-------|--------|-------------|
+| 0. Exploration | | [patterns found] |
+| 1. Analysis | | [complexity, scope] |
+| 2. Design | | [architecture decision] |
+| 3. Implementation | | [files created/modified] |
+| 4. QA | | [score, issues fixed] |
+| 5. Refinement | | [iterations, final score] |
 
-**Skills Invoked:**
-- ⚡ categorical-property-testing
+**Deliverables:**
+```
+Files created:
+- [list with paths]
+
+Files modified:
+- [list with paths]
+
+Tests added:
+- [list with paths]
+```
 
 **Final Quality Score:** [X]/10
 
-**Deliverables:**
-- [List of files created/modified]
-- [Tests added]
-- [Documentation updated]
+**Ready for commit:** [YES/NO - if NO, what's blocking]

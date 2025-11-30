@@ -102,194 +102,206 @@ $ARGUMENTS
 
 ---
 
-## Execution Trace
+## STAGE 1: Baseline Establishment
 
-### Stage 1: Baseline Establishment
-
-```
-@parallel[
-┌───────────────────┬───────────────────┬───────────────────┐
-│ TEST BASELINE     │ BEHAVIOR          │ API SURFACE       │
-│                   │ ANALYSIS          │                   │
-├───────────────────┼───────────────────┼───────────────────┤
-│                   │                   │                   │
-│ Running tests...  │ Documenting:      │ Public interfaces:│
-│                   │ - Input/output    │ - Functions       │
-│ ✓ Passed: [N]     │ - Side effects    │ - Classes         │
-│ ✗ Failed: [N]     │ - Error behavior  │ - Types           │
-│                   │ - Edge cases      │ - Constants       │
-│                   │                   │                   │
-│ Coverage: [X]%    │ Behavior Doc: ✓   │ API Snapshot: ✓   │
-└───────────────────┴───────────────────┴───────────────────┘
-]
-```
-
-**Baseline Status:**
-- Tests: [all passing / some failing]
-- Coverage: [X]%
-- API Surface: [documented]
-- Behavior: [documented]
-
----
-
-### Stage 2: Refactoring Analysis
+**ACTION: Capture current state before any changes**
 
 ```
-┌─────────────────────────────────────────────┐
-│ @run:now → /route                           │
-│                                             │
-│ Refactoring Type Detected:                  │
-│ □ Extract method/class                      │
-│ □ Rename/move                               │
-│ □ Simplify conditionals                     │
-│ □ Introduce abstraction                     │
-│ □ Remove duplication                        │
-│ □ Performance optimization                  │
-│ □ Architecture change                       │
-│                                             │
-│ Risk Level: [Low/Medium/High]               │
-└─────────────────────────────────────────────┘
+1. Run existing tests:
+   Command: [test command]
+   All tests MUST pass before refactoring starts
 
-┌─────────────────────────────────────────────┐
-│ @run:now → /build-prompt                    │
-│                                             │
-│ Refactoring Plan:                           │
-│                                             │
-│ Step 1: [first atomic refactoring]          │
-│ Step 2: [second atomic refactoring]         │
-│ Step 3: [third atomic refactoring]          │
-│ ...                                         │
-│                                             │
-│ Total Steps: [N]                            │
-│ Estimated Impact: [scope]                   │
-└─────────────────────────────────────────────┘
+2. Document current behavior:
+   - Read target files
+   - List public functions/methods
+   - Note return types and side effects
 
-⚡ Skill: "categorical-property-testing"
-┌─────────────────────────────────────────────┐
-│ Invariants to Preserve:                     │
-│                                             │
-│ - [invariant 1]: [description]              │
-│ - [invariant 2]: [description]              │
-│ - [invariant 3]: [description]              │
-│                                             │
-│ Property Tests Generated: [N]               │
-└─────────────────────────────────────────────┘
+3. Capture API surface:
+   Use Grep: "def ", "class ", "export " in target files
+   Document all public interfaces
+```
+
+**Test Baseline:**
+| Metric | Value |
+|--------|-------|
+| Tests run | |
+| Passed | |
+| Failed | |
+| Coverage | % |
+
+**ABORT CONDITION:** If any tests fail, fix them first before refactoring.
+
+**API Surface Snapshot:**
+```
+[file.py]:
+  - function_a(param1: type) -> return_type
+  - function_b(param1: type, param2: type) -> return_type
+  - class ClassName:
+      - method_a() -> type
 ```
 
 ---
 
-### Stage 3: Incremental Refactoring
+## STAGE 2: Refactoring Analysis
 
-```
-@loop:for-each:refactoring_step
+**ACTION: Classify refactoring and plan atomic steps**
 
-┌─────────────────────────────────────────────┐
-│ STEP 1/N: [step description]                │
-│                                             │
-│ @run:now → Apply step                       │
-│ Changes: [files affected]                   │
-│                                             │
-│ @run:now → Run tests                        │
-│ Result: [✓ PASS / ✗ FAIL]                   │
-│                                             │
-│ @if:tests:red                               │
-│   → Reverting step                          │
-│   → /debug ${failure}                       │
-└─────────────────────────────────────────────┘
-          ↓
-┌─────────────────────────────────────────────┐
-│ STEP 2/N: [step description]                │
-│                                             │
-│ @run:now → Apply step                       │
-│ Changes: [files affected]                   │
-│                                             │
-│ @run:now → Run tests                        │
-│ Result: [✓ PASS / ✗ FAIL]                   │
-└─────────────────────────────────────────────┘
-          ↓
-         ...
-```
+**Refactoring Type:**
+- [ ] Extract method/class
+- [ ] Rename/move
+- [ ] Simplify conditionals
+- [ ] Introduce abstraction
+- [ ] Remove duplication
+- [ ] Performance optimization
+- [ ] Architecture change
 
-**Refactoring Progress:**
-| Step | Description | Status | Tests |
-|------|-------------|--------|-------|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
+**Risk Assessment:**
+| Factor | Value | Notes |
+|--------|-------|-------|
+| Risk level | [Low/Med/High] | |
+| Files affected | [N] | |
+| Breaking changes | [Yes/No] | |
+| Reversible | [Yes/No] | |
 
----
+**Atomic Refactoring Steps:**
+Each step must be small enough that:
+- Tests can run after it
+- It can be reverted independently
 
-### Stage 4: Behavior Verification
+| Step | Description | Files | Risk |
+|------|-------------|-------|------|
+| 1 | [atomic change] | [file] | Low |
+| 2 | [atomic change] | [file] | Low |
+| 3 | [atomic change] | [file] | Med |
 
-```
-@parallel[
-┌───────────────────┬───────────────────┬───────────────────┐
-│ API COMPARISON    │ PROPERTY TESTS    │ PERFORMANCE       │
-├───────────────────┼───────────────────┼───────────────────┤
-│                   │                   │                   │
-│ Before vs After:  │ Invariants:       │ Before:           │
-│                   │                   │ - [metric]: [val] │
-│ + Added: [N]      │ ✓ [prop1]: PASS   │                   │
-│ - Removed: [N]    │ ✓ [prop2]: PASS   │ After:            │
-│ ~ Changed: [N]    │ ✓ [prop3]: PASS   │ - [metric]: [val] │
-│                   │                   │                   │
-│ Breaking: [Y/N]   │ All: [PASS/FAIL]  │ Δ: [+/-X%]        │
-└───────────────────┴───────────────────┴───────────────────┘
-]
-```
-
-**Verification Summary:**
-- API Compatible: [Yes / No - intentional changes listed]
-- Properties Preserved: [Yes / No]
-- Performance: [Acceptable / Degraded / Improved]
+**Invariants to Preserve (⚡ categorical-property-testing):**
+| Property | Description | How to Test |
+|----------|-------------|-------------|
+| [prop1] | [what must stay true] | [assertion] |
+| [prop2] | [what must stay true] | [assertion] |
 
 ---
 
-### Stage 5: Review
+## STAGE 3: Incremental Refactoring
 
+**ACTION: Apply each step, test, then proceed**
+
+### Step 1: [Description]
 ```
-┌─────────────────────────────────────────────┐
-│ @run:now → /meta-review                     │
-│                                             │
-│ Reviewing refactored code through:          │
-│ - Correctness review                        │
-│ - Maintainability review                    │
-│ - Performance review                        │
-│                                             │
-│ Review Status: [PENDING]                    │
-└─────────────────────────────────────────────┘
+BEFORE:
+[code before change]
+
+AFTER:
+[code after change]
+
+WHY: [reason for this change]
 ```
 
-[Execute /meta-review for full review]
+**Test after Step 1:**
+```bash
+Command: [test command]
+Result: [PASS/FAIL]
+```
+- [ ] Tests pass → Proceed to Step 2
+- [ ] Tests fail → Revert and debug
+
+### Step 2: [Description]
+```
+BEFORE:
+[code before change]
+
+AFTER:
+[code after change]
+```
+
+**Test after Step 2:**
+```bash
+Result: [PASS/FAIL]
+```
+
+### Step N: [Continue pattern...]
+
+**Progress Tracker:**
+| Step | Applied | Tested | Status |
+|------|---------|--------|--------|
+| 1 | [ ] | [ ] | |
+| 2 | [ ] | [ ] | |
+| 3 | [ ] | [ ] | |
+
+**If Any Step Fails:**
+```
+@if:tests:red
+1. Revert the change: git checkout [file]
+2. /debug to analyze failure
+3. Revise approach and retry
+```
+
+---
+
+## STAGE 4: Behavior Verification
+
+**ACTION: Verify refactoring preserved behavior**
+
+**API Comparison (Before vs After):**
+| Interface | Before | After | Breaking? |
+|-----------|--------|-------|-----------|
+| [func_a] | [signature] | [signature] | No |
+| [func_b] | [signature] | [signature] | No |
+
+**Property Tests:**
+| Property | Status |
+|----------|--------|
+| [prop1] | PASS/FAIL |
+| [prop2] | PASS/FAIL |
+
+**Performance Check:**
+| Metric | Before | After | Acceptable? |
+|--------|--------|-------|-------------|
+| [Time for X] | [value] | [value] | Yes/No |
+| [Memory for Y] | [value] | [value] | Yes/No |
+
+---
+
+## STAGE 5: Review
+
+**ACTION: /meta-review the refactored code**
+
+Focus on:
+- [ ] Correctness: Same behavior as before?
+- [ ] Maintainability: Improved readability?
+- [ ] Performance: No degradation?
+
+**Review Verdict:** [APPROVE / REQUEST CHANGES]
 
 ---
 
 ## Refactoring Summary
 
-| Metric | Before | After | Change |
-|--------|--------|-------|--------|
+| Metric | Before | After | Δ |
+|--------|--------|-------|---|
 | Lines of Code | | | |
 | Cyclomatic Complexity | | | |
-| Test Coverage | | | |
 | Duplication | | | |
-
-**Steps Completed:** [N]/[Total]
+| Test Coverage | | | |
 
 **Files Changed:**
-- [file1]: [change summary]
-- [file2]: [change summary]
+```
+[path/file1.py] - [description of change]
+[path/file2.py] - [description of change]
+```
 
-**Invariants Verified:**
-- ✓ [invariant 1]
-- ✓ [invariant 2]
+**Invariants Verified:** ✓ All properties preserved
 
-**Final Status:** [SUCCESS / PARTIAL / ROLLBACK]
+**Final Status:** [SUCCESS / PARTIAL / ROLLED BACK]
 
-**Commands Invoked:**
-- /route (analysis)
-- /build-prompt (planning)
-- /debug (if failures)
-- /meta-review (final review)
+**Commit Message (if successful):**
+```
+refactor: [brief description]
 
-**Skills Used:**
-- ⚡ categorical-property-testing
+[Detailed description of what was refactored and why]
+
+- [Change 1]
+- [Change 2]
+
+Tested: All tests pass, behavior verified
+```

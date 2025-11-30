@@ -122,66 +122,67 @@ $ARGUMENTS
 
 ---
 
-## Execution Trace
+## STAGE 1: Pre-Deployment Validation
 
-### Stage 1: Pre-Deployment Validation
+**ACTION: Validate everything in parallel before deployment**
 
+### 1A. Run Tests (/meta-test)
+```bash
+Command: [test command]
 ```
-@parallel[
-┌───────────────────┬───────────────────┬───────────────────┐
-│ /meta-test        │ /meta-review      │ PREREQUISITES     │
-├───────────────────┼───────────────────┼───────────────────┤
-│                   │                   │                   │
-│ Running full      │ Running multi-    │ Checking:         │
-│ test suite...     │ pass review...    │                   │
-│                   │                   │ □ Credentials     │
-│ Unit: [status]    │ Correctness: /10  │ □ Permissions     │
-│ Integration: []   │ Security: /10     │ □ Dependencies    │
-│ Property: []      │ Performance: /10  │ □ Config          │
-│                   │                   │ □ Resources       │
-│                   │                   │                   │
-│ Overall: [P/F]    │ Overall: [P/F]    │ Overall: [P/F]    │
-└───────────────────┴───────────────────┴───────────────────┘
-]
-```
+| Type | Passed | Failed |
+|------|--------|--------|
+| Unit | | |
+| Integration | | |
+| Property | | |
 
-**Validation Gate:**
-| Check | Status | Details |
-|-------|--------|---------|
-| Tests | | |
-| Review | | |
-| Prerequisites | | |
+### 1B. Run Review (/meta-review)
+| Dimension | Score |
+|-----------|-------|
+| Correctness | /10 |
+| Security | /10 |
+| Performance | /10 |
+
+### 1C. Check Prerequisites
+| Prerequisite | Status | Notes |
+|--------------|--------|-------|
+| Credentials available | ✓/✗ | |
+| Permissions granted | ✓/✗ | |
+| Config files ready | ✓/✗ | |
+| Dependencies resolved | ✓/✗ | |
+| Target environment accessible | ✓/✗ | |
+
+**ABORT CONDITIONS:**
+- Any test fails → Fix before deploying
+- Security issues found → Remediate first
+- Missing credentials → Cannot proceed
+- Environment unreachable → Check connectivity
 
 ---
 
-### Stage 2: Build & Package
+## STAGE 2: Build & Package
 
-```
-┌─────────────────────────────────────────────┐
-│ @run:now → Build production artifacts       │
-│                                             │
-│ Build Command: [command]                    │
-│ Build Output: [location]                    │
-│                                             │
-│ Artifacts:                                  │
-│ - [artifact 1]: [size] [checksum]           │
-│ - [artifact 2]: [size] [checksum]           │
-│                                             │
-│ Build Status: [SUCCESS/FAILED]              │
-└─────────────────────────────────────────────┘
+**ACTION: Create production artifacts**
 
-┌─────────────────────────────────────────────┐
-│ @run:now → Verify build integrity           │
-│                                             │
-│ Checks:                                     │
-│ ✓ Checksums match                           │
-│ ✓ No sensitive data in artifacts            │
-│ ✓ Dependencies bundled correctly            │
-│ ✓ Configuration for target environment      │
-│                                             │
-│ Integrity: [VERIFIED/FAILED]                │
-└─────────────────────────────────────────────┘
+```bash
+Build command: [e.g., npm run build, docker build, go build]
+Output location: [path/to/artifacts]
 ```
+
+**Build Results:**
+| Artifact | Size | Checksum |
+|----------|------|----------|
+| [artifact name] | [size] | [sha256] |
+
+**Integrity Checks:**
+| Check | Status |
+|-------|--------|
+| Checksums verified | ✓/✗ |
+| No secrets in artifacts | ✓/✗ |
+| Dependencies bundled | ✓/✗ |
+| Correct environment config | ✓/✗ |
+
+**Build Status:** [SUCCESS / FAILED]
 
 ---
 
@@ -341,25 +342,33 @@ $ARGUMENTS
 
 | Stage | Status | Duration | Notes |
 |-------|--------|----------|-------|
-| Validation | | | |
-| Build | | | |
-| Staging | | | |
-| Production | | | |
-| Verification | | | |
-| Finalize | | | |
+| 1. Validation | | | |
+| 2. Build | | | |
+| 3. Staging | | | |
+| 4. Production | | | |
+| 5. Verification | | | |
+| 6. Finalize | | | |
 
-**Deployment Result:** [SUCCESS / ROLLED BACK / FAILED]
+**Result:** [SUCCESS / ROLLED BACK / FAILED]
 
-**Version:**
-- Previous: [old version]
-- Current: [new version]
+**Version Change:**
+| | Value |
+|----------|-------|
+| Previous | [vX.Y.Z] |
+| Current | [vX.Y.Z] |
 
-**Rollback Available:** Yes - Snapshot [id]
+**Rollback Info:**
+```
+Snapshot ID: [id]
+Rollback command: [command to execute rollback]
+```
 
-**Commands Invoked:**
+**Commands Used:**
 - /meta-test (validation)
 - /meta-review (validation)
-- /debug (if failures)
+- /debug (if any failures)
 
-**Notifications Sent:**
-- [stakeholder list]
+**Notifications:**
+- [ ] Team notified
+- [ ] Stakeholders informed
+- [ ] Release notes published
