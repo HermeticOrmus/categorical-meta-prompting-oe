@@ -1,13 +1,15 @@
 # Formal Proofs of Categorical Laws in Meta-Prompting
 
 **Document Version:** 2.0
-**Status:** Verified
+**Status:** Semi-Formal Proofs (Not Machine-Verified)
 **Authors:** Categorical Meta-Prompting Research Team
 **Last Updated:** 2025-01-15
 
 ## Abstract
 
-This document provides formal and semi-formal proofs for the categorical laws claimed in the categorical meta-prompting framework. We prove that our Functor F, Monad M, and Comonad W implementations satisfy their respective categorical laws, addressing concerns about unverified claims. Proofs are presented in both natural mathematical notation and pseudo-Coq/Agda specifications for potential machine verification.
+This document provides **semi-formal proofs** for the categorical laws claimed in the categorical meta-prompting framework. These proofs demonstrate that the Functor F, Monad M, and Comonad W implementations are **designed to satisfy** their respective categorical laws under semantic equivalence.
+
+**Important:** These are paper proofs, not machine-verified. They have not been checked by Coq, Agda, or any proof assistant. Property-based tests are provided in `tests/test_categorical_laws_property.py` but require execution to validate.
 
 ---
 
@@ -528,25 +530,25 @@ def test_comonad_left_counit(value):
     assert result.current == w.current
 ```
 
-### 6.2 QuickCheck-Style Verification Results
+### 6.2 Running the Tests
 
+To execute these tests and obtain actual verification results:
+
+```bash
+# Install dependencies
+pip install pytest hypothesis
+
+# Run tests with default settings (100 samples per law)
+pytest tests/test_categorical_laws_property.py -v
+
+# Run with more samples for higher confidence
+pytest tests/test_categorical_laws_property.py --hypothesis-max-examples=1000
+
+# Show statistics
+pytest tests/test_categorical_laws_property.py -v --hypothesis-show-statistics
 ```
-Property Tests Executed: 10,000 total
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Law                         | Samples | Status
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Functor Identity            | 1000    | PASSED ✓
-Functor Composition         | 1000    | PASSED ✓
-Monad Left Identity         | 1000    | PASSED ✓
-Monad Right Identity        | 1000    | PASSED ✓
-Monad Associativity         | 1000    | PASSED ✓
-Comonad Left Counit         | 1000    | PASSED ✓
-Comonad Right Counit        | 1000    | PASSED ✓
-Comonad Coassociativity     | 1000    | PASSED ✓
-Quality Tensor Associativity| 1000    | PASSED ✓
-Quality Tensor Unit         | 1000    | PASSED ✓
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+
+**Note:** The tests above are implemented but have not been executed as part of this document creation. Run them to obtain actual pass/fail results.
 
 ---
 
@@ -596,12 +598,12 @@ record Functor (C D : Category) : Set where
 
 We have provided semi-formal proofs for all five categorical laws (2 functor, 3 monad) and all three comonad laws. These proofs:
 
-1. **Are mathematically sound** under semantic equivalence
-2. **Are empirically verified** via property-based testing
+1. **Demonstrate mathematical soundness** under semantic equivalence
+2. **Can be empirically tested** via the provided property-based test suite
 3. **Acknowledge limitations** (non-determinism, partial inverses)
-4. **Provide a roadmap** for machine verification
+4. **Provide a roadmap** for future machine verification
 
-The categorical meta-prompting framework now has a rigorous theoretical foundation that supports its claims of "proven correctness" - with appropriate caveats about the nature of that proof.
+**Status:** These are paper proofs. The property-based tests in `tests/test_categorical_laws_property.py` can validate these claims empirically when executed. Machine-verified proofs (Coq/Agda) remain future work.
 
 ---
 
