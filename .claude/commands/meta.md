@@ -4,50 +4,121 @@ allowed-tools: Read, Grep, Glob, Bash(python:*), Edit, Write, TodoWrite
 argument-hint: [task-description]
 ---
 
-# Meta-Prompting Task Solver
+# Categorical Meta-Prompting
 
-You are applying the Categorical Meta-Prompting framework to solve a task.
+You are a meta-prompt executor. Your job is to:
+1. Analyze the task
+2. Select the appropriate sub-prompt/strategy
+3. Execute with that prompt
+4. Assess and iterate if needed
 
 ## Task
 $ARGUMENTS
 
-## Strategy Selection
+---
 
-First, analyze the task complexity:
+## Phase 1: TASK ANALYSIS
 
-**Complexity Indicators to Check:**
-- Simple/direct request → **DIRECT** (complexity < 0.3)
-- Needs comparison or multiple options → **MULTI_APPROACH** (0.3-0.7)
-- Complex, iterative, needs refinement → **AUTONOMOUS_EVOLUTION** (> 0.7)
+Analyze the task and classify:
 
-Based on your analysis, apply the appropriate strategy:
+| Dimension | Assessment |
+|-----------|------------|
+| Domain | [ALGORITHM / SECURITY / API / DEBUG / TESTING / GENERAL] |
+| Complexity | [LOW: 0-3 / MEDIUM: 4-6 / HIGH: 7-10] |
+| Requires iteration? | [YES / NO] |
 
-### If DIRECT (simple tasks):
-Just solve it concisely. No overhead needed.
+---
 
-### If MULTI_APPROACH (medium tasks):
-1. Generate 2-3 distinct approaches
-2. Compare pros/cons of each
-3. Synthesize the best solution
+## Phase 2: PROMPT SELECTION
 
-### If AUTONOMOUS_EVOLUTION (complex tasks):
-1. **Analysis Phase**: What is the core problem? What constraints exist?
-2. **Strategy Phase**: What approaches could work? Pick the most promising.
-3. **Implementation Phase**: Execute the chosen approach.
-4. **Meta-Reflection Phase**: Assess quality (0-10). What's working? What needs improvement?
-5. **Synthesis Phase**: Refine based on reflection. Repeat if quality < 8.
+Based on your analysis, select the appropriate approach:
 
-## Quality Tracking
+### If Domain = ALGORITHM:
+```
+{prompt:review_algorithm}
+Review this code for algorithmic correctness:
+- Time complexity (Big-O)
+- Space complexity
+- Edge cases (empty, single, large)
+- Correctness for all inputs
+```
 
-After completing the task, provide:
-- **Strategy Used**: DIRECT | MULTI_APPROACH | AUTONOMOUS_EVOLUTION
-- **Iterations**: How many refinement cycles (if any)
-- **Quality Assessment**: Honest 0-10 rating with justification
-- **Key Insight**: What made this solution work
+### If Domain = SECURITY:
+```
+{prompt:review_security}
+Review this code for security issues:
+- Input validation
+- Injection risks (SQL, command, XSS)
+- Authentication/authorization
+- Sensitive data exposure
+```
 
-## Reference Skills
+### If Domain = DEBUG:
+```
+{prompt:debug}
+Debug this issue systematically:
+1. What is the exact error/symptom?
+2. What's the minimal reproduction?
+3. What are 2-3 likely causes?
+4. How to test each hypothesis?
+5. What's the fix?
+```
 
-If you need detailed patterns, invoke:
-- `Skill: "recursive-meta-prompting"` for RMP loops
-- `Skill: "quality-enriched-prompting"` for quality assessment
-- `Skill: "prompt-dsl"` for prompt composition
+### If Domain = TESTING:
+```
+{prompt:test_generate}
+Generate comprehensive tests:
+- Happy path tests
+- Edge case tests
+- Error case tests
+```
+
+### If Complexity = HIGH (7-10):
+Apply AUTONOMOUS_EVOLUTION strategy:
+1. Analysis → Strategy → Implementation → Meta-Reflection → Synthesis
+2. Iterate until quality ≥ 8/10
+
+### If Complexity = MEDIUM (4-6):
+Apply MULTI_APPROACH strategy:
+1. Generate 2-3 approaches
+2. Compare trade-offs
+3. Synthesize best solution
+
+### If Complexity = LOW (0-3):
+Apply DIRECT strategy:
+Just solve it. No overhead.
+
+---
+
+## Phase 3: EXECUTE
+
+Apply the selected prompt/strategy to the task.
+
+[Execute here]
+
+---
+
+## Phase 4: QUALITY CHECK
+
+| Metric | Score (0-10) | Notes |
+|--------|--------------|-------|
+| Correctness | | Does it solve the problem? |
+| Completeness | | Are edge cases handled? |
+| Clarity | | Is it understandable? |
+| **Overall** | | |
+
+**If Overall < 7**: Return to Phase 3 with refinements.
+**If Overall ≥ 7**: Proceed to output.
+
+---
+
+## Output
+
+**Strategy Used**: [DIRECT / MULTI_APPROACH / AUTONOMOUS_EVOLUTION]
+**Domain**: [Selected domain]
+**Prompt Applied**: [Which prompt template]
+**Iterations**: [Count]
+**Final Quality**: [Score]/10
+
+**Solution**:
+[Final answer]
