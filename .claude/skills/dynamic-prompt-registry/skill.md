@@ -397,3 +397,263 @@ quality(A || B) == mean(quality(A), quality(B))
 5. **Type Safety**: Domain tags and type annotations
 6. **Composability**: Categorical structure enables clean composition
 7. **Unified Syntax**: Consistent @skills: modifier across all commands
+
+---
+
+## Registered Prompts
+
+### {prompt:categorical-structure}
+
+**Domain**: FRAMEWORK
+**Quality**: 0.92
+**Tags**: category-theory, framework-extension, mathematical
+
+**Description**: Universal template for implementing categorical structures (functors, monads, comonads, natural transformations, adjunctions, hom-equivalences, enriched categories) in meta-prompting frameworks.
+
+**Template**:
+```
+You are implementing a categorical structure in a meta-prompting framework.
+
+## Structure Identification
+
+First, identify the categorical structure:
+- [ ] Functor (F: C → D) - structure-preserving map
+- [ ] Monad (unit, bind, join) - computation with effects
+- [ ] Comonad (extract, duplicate, extend) - context-dependent computation
+- [ ] Natural Transformation (α: F ⇒ G) - transformation between functors
+- [ ] Adjunction (F ⊣ G) - universal pairing of functors
+- [ ] Hom-Equivalence - isomorphism of hom-sets
+- [ ] Enriched Category - hom-objects with extra structure
+
+## Implementation Template
+
+For the structure "{structure_name}":
+
+### 1. Formal Definition
+Provide the type signature:
+```
+{formal_type_signature}
+```
+
+### 2. Operations
+List all operations with their type signatures:
+- {operation_1}: {type_1} ({description_1})
+- {operation_2}: {type_2} ({description_2})
+
+### 3. Laws
+State the laws that must be satisfied:
+1. {law_1_name}: {law_1_statement}
+2. {law_2_name}: {law_2_statement}
+
+### 4. Command Syntax
+Design the unified command syntax:
+```bash
+/{command_name} @mode:{operations} @{param}:{value} "task"
+```
+
+### 5. Composition Integration
+Define behavior with composition operators:
+- With →: {sequential_behavior}
+- With ||: {parallel_behavior}
+- With ⊗: {tensor_behavior}
+- With >=>: {kleisli_behavior}
+
+### 6. Quality Propagation
+Specify the quality rule:
+```
+quality({operation}) = {quality_formula}
+```
+
+### 7. Verification Approach
+Describe how to verify the laws:
+- Property-based testing strategy
+- Example test cases
+- Edge cases to consider
+
+## Output Format
+
+Produce:
+1. Command specification (.claude/commands/{name}.md)
+2. ORCHESTRATION-SPEC.md update
+3. meta-self skill update
+4. Law verification tests
+```
+
+**Usage**:
+```bash
+# Apply to implement a new categorical structure
+/meta @skills:categorical-structure "implement comonad W for context extraction"
+
+# Use with refinement
+/rmp @quality:0.85 @skills:categorical-structure "design adjunction for task-prompt"
+```
+
+---
+
+### {prompt:command-creation}
+
+**Domain**: FRAMEWORK
+**Quality**: 0.88
+**Tags**: slash-command, framework-extension, design
+
+**Description**: Template for creating new slash commands following unified categorical syntax.
+
+**Template**:
+```
+You are creating a new slash command for the categorical meta-prompting framework.
+
+## Command Design
+
+### 1. Purpose
+What categorical operation does this command implement?
+- Primary operation: {operation}
+- Categorical role: {categorical_role}
+
+### 2. Syntax Definition
+```bash
+/{command_name} @modifier1:value @modifier2:value [composition] "task"
+```
+
+### 3. Modifiers
+| Modifier | Values | Default | Description |
+|----------|--------|---------|-------------|
+| @mode: | {modes} | {default_mode} | Execution mode |
+| @{param}: | {values} | {default} | {description} |
+
+### 4. Categorical Integration
+- Functor aspect: {how_it_maps}
+- Monad aspect: {how_it_composes}
+- Quality tracking: {quality_rule}
+
+### 5. Orchestration Patterns
+```
+@orchestration
+  @sequential[
+    → {step_1}
+    → {step_2}
+  ]
+@end
+```
+
+### 6. Examples
+```bash
+# Basic usage
+/{command_name} "simple task"
+
+# With modifiers
+/{command_name} @mode:iterative @quality:0.85 "complex task"
+
+# In composition
+/chain [/{command_name}→/other] "pipeline task"
+```
+
+### 7. Checkpoint Format
+```yaml
+CHECKPOINT_{COMMAND}_[n]:
+  command: /{command_name}
+  quality:
+    aggregate: [0-1]
+  status: [CONTINUE | CONVERGED | HALT]
+```
+
+## Output Files
+
+1. `.claude/commands/{command_name}.md` - Command definition
+2. Update `ORCHESTRATION-SPEC.md` - Add to registry
+3. Update `meta-self/skill.md` - Add to reference
+```
+
+**Usage**:
+```bash
+/meta @skills:command-creation "create /context command for comonad operations"
+```
+
+---
+
+### {prompt:law-verification}
+
+**Domain**: FRAMEWORK
+**Quality**: 0.85
+**Tags**: testing, verification, category-theory
+
+**Description**: Template for verifying categorical laws using property-based testing.
+
+**Template**:
+```
+You are verifying categorical laws for a structure implementation.
+
+## Law Verification Protocol
+
+### 1. Identify Laws
+For structure "{structure_name}", the laws are:
+1. {law_1}: {statement_1}
+2. {law_2}: {statement_2}
+3. {law_3}: {statement_3}
+
+### 2. Property-Based Tests
+
+For each law, create a property test:
+
+```python
+from hypothesis import given, strategies as st
+
+# Law 1: {law_1_name}
+@given(st.{input_strategy})
+def test_{law_1_name}(input_value):
+    """
+    Verify: {law_1_statement}
+    """
+    left_side = {left_computation}
+    right_side = {right_computation}
+    assert left_side == right_side, f"Law violated for {input_value}"
+
+# Law 2: {law_2_name}
+@given(st.{input_strategy})
+def test_{law_2_name}(input_value):
+    """
+    Verify: {law_2_statement}
+    """
+    left_side = {left_computation}
+    right_side = {right_computation}
+    assert left_side == right_side
+```
+
+### 3. Edge Cases
+
+Test these specific cases:
+- Identity element: {identity_case}
+- Composition: {composition_case}
+- Empty/null: {empty_case}
+
+### 4. Counterexample Analysis
+
+If a law fails:
+1. Capture the counterexample
+2. Analyze which assumption was violated
+3. Determine if implementation or law statement needs fixing
+
+### 5. Documentation
+
+Record verification results:
+```yaml
+LAW_VERIFICATION:
+  structure: {structure_name}
+  laws_tested: {count}
+  laws_passed: {passed}
+  laws_failed: {failed}
+  counterexamples: {list}
+  verification_date: {date}
+  status: [VERIFIED | PARTIALLY_VERIFIED | FAILED]
+```
+
+## Output
+
+1. Test file: `tests/test_{structure_name}_laws.py`
+2. Verification log: `logs/verification/{structure_name}.md`
+3. Update: `CATEGORICAL-LAWS-PROOFS.md`
+```
+
+**Usage**:
+```bash
+/meta @skills:law-verification "verify comonad laws for /context command"
+```

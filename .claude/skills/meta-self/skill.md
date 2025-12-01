@@ -13,6 +13,7 @@ This skill serves as the authoritative reference for the categorical meta-prompt
 F: Task → Prompt        (Functor - structure-preserving transformation)
 M: Prompt →^n Prompt    (Monad - iterative refinement)
 W: History → Context    (Comonad - context extraction)
+α: F ⇒ G                (Natural Transformation - strategy switching)
 [0,1]: Quality → Quality (Enriched - quality tracking)
 ```
 
@@ -24,7 +25,10 @@ W: History → Context    (Comonad - context extraction)
 3. Monad Left Identity:  return >=> f = f
 4. Monad Right Identity: f >=> return = f
 5. Monad Associativity:  (f >=> g) >=> h = f >=> (g >=> h)
-6. Quality Monotonicity: quality(A ⊗ B) ≤ min(quality(A), quality(B))
+6. Comonad Left Id:      extract ∘ duplicate = id
+7. Comonad Associativity: duplicate ∘ duplicate = fmap duplicate ∘ duplicate
+8. Naturality Condition: α_B ∘ F(f) = G(f) ∘ α_A  for all f: A → B
+9. Quality Monotonicity: quality(A ⊗ B) ≤ min(quality(A), quality(B))
 ```
 
 ---
@@ -442,15 +446,60 @@ When executing any command or skill:
 
 ## Command Reference Quick Look
 
+### Core Categorical Commands (F, M, W, α)
+
+| Command | Categorical Role | Key Modifiers |
+|---------|------------------|---------------|
+| `/meta` | **Functor F**: Task → Prompt | @mode:, @tier:, @template:, @domain: |
+| `/rmp` | **Monad M**: Prompt →ⁿ Prompt | @quality:, @max_iterations:, @mode: |
+| `/context` | **Comonad W**: History → Context | @mode:, @focus:, @depth:, @transform: |
+| `/transform` | **Nat. Trans. α**: F ⇒ G | @from:, @to:, @verify:, @mode: |
+
+### Natural Transformation Operations (/transform)
+
+| Mode | Description | Type Signature |
+|------|-------------|----------------|
+| `@mode:transform` | Strategy switch (default) | α_A: F(A) → G(A) |
+| `@mode:compare` | Compare strategies | Show F vs G side-by-side |
+| `@mode:analyze` | Recommend optimal | Suggest best α |
+
+**Strategy Registry (Functors)**:
+- `zero-shot` (F_ZS): Direct prompt, quality ~0.65
+- `few-shot` (F_FS): Exemplar prompt, quality ~0.78
+- `chain-of-thought` (F_CoT): Reasoning prompt, quality ~0.85
+- `tree-of-thought` (F_ToT): Branching prompt, quality ~0.88
+- `meta-prompting` (F_Meta): Adaptive prompt, quality ~0.90
+
+**Aliases**:
+- `/cot` = `/transform @to:chain-of-thought`
+- `/tot` = `/transform @to:tree-of-thought`
+
+### Comonad Operations (/context)
+
+| Mode | Operation | Type Signature |
+|------|-----------|----------------|
+| `@mode:extract` | Focus on current | ε: W(A) → A |
+| `@mode:duplicate` | Meta-observation | δ: W(A) → W(W(A)) |
+| `@mode:extend` | Context-aware transform | (W(A) → B) → W(A) → W(B) |
+
+**Aliases**:
+- `/extract` = `/context @mode:extract`
+- `/focus` = `/context @mode:extract @depth:1`
+
+### Composition & Routing Commands
+
 | Command | Purpose | Key Modifiers |
 |---------|---------|---------------|
-| `/meta` | Categorical meta-prompting | @mode:, @tier:, @template:, @domain: |
-| `/rmp` | Recursive meta-prompting loop | @quality:, @max_iterations:, @mode: |
 | `/chain` | Command composition | @mode:, @budget:, @quality: |
+| `/route` | Dynamic routing | @domain: |
+| `/build-prompt` | Template assembly | @template: |
+
+### Domain Commands
+
+| Command | Purpose | Key Modifiers |
+|---------|---------|---------------|
 | `/review` | Domain-aware code review | @domain: |
 | `/debug` | Systematic debugging | @mode: |
-| `/build-prompt` | Template assembly | @template: |
-| `/route` | Dynamic routing | @domain: |
 | `/hekat` | Agent orchestration DSL | @tier:, @budget:, @variance: |
 | `/meta-command` | Create new commands | @skills:, @mode: |
 | `/task-relay` | Multi-agent relay | @budget:, @pattern: |
@@ -461,6 +510,8 @@ When executing any command or skill:
 
 | Skill | Purpose | Integration |
 |-------|---------|-------------|
+| `categorical-meta-prompting` | Core F, M, W framework | /meta, /rmp, /context |
+| `categorical-structure-builder` | Implement any categorical structure | {prompt:categorical-structure} |
 | `recursive-meta-prompting` | RMP implementation patterns | @mode:iterative |
 | `dynamic-prompt-registry` | Prompt lookup/composition | @skills:, {prompt:} |
 | `quality-enriched-prompting` | [0,1]-enriched quality | @quality: |
@@ -485,6 +536,9 @@ Before executing any prompt:
 
 ## Version
 
-**Specification Version**: 2.0
+**Specification Version**: 2.2
 **Compatibility**: 100% backward compatible
-**Foundation**: Category Theory (F, M, W, [0,1]-enriched)
+**Foundation**: Category Theory (F, M, W, α, [0,1]-enriched)
+**Last Updated**: 2025-12-01
+**New in 2.2**: Natural Transformation α operations via /transform command
+**New in 2.1**: Comonad W operations via /context command

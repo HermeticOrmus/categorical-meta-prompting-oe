@@ -11,6 +11,7 @@ Meta-commands are prompts that call other prompts, enabling sophisticated workfl
 - **Functor F**: Task → Prompt (structure-preserving transformation)
 - **Monad M**: Iterative refinement with quality tracking
 - **Comonad W**: Context extraction from execution history
+- **Natural Transformation α**: Strategy switching (F ⇒ G)
 - **[0,1]-Enriched**: Quality degradation tracking
 
 ---
@@ -29,14 +30,21 @@ Meta-commands are prompts that call other prompts, enabling sophisticated workfl
 │                                                                 │
 │   These commands COMPOSE and SELECT other commands dynamically  │
 ├─────────────────────────────────────────────────────────────────┤
+│                    CATEGORICAL LAYER (F, M, W, α)               │
+│   /meta (Functor)  /rmp (Monad)  /context (Comonad)            │
+│   /transform (Natural Transformation)                           │
+│                                                                 │
+│   Core categorical operations: routing, refinement, context,    │
+│   strategy switching                                            │
+├─────────────────────────────────────────────────────────────────┤
 │                    OBJECT COMMAND LAYER                         │
-│   /debug  /review  /compose  /rmp  /select-prompt  /list-prompts│
+│   /debug  /review  /compose  /select-prompt  /list-prompts     │
 │                                                                 │
 │   These commands DO THE WORK on specific tasks                  │
 ├─────────────────────────────────────────────────────────────────┤
 │                    SKILL LAYER                                  │
 │   ⚡ categorical-property-testing                                │
-│   ⚡ security-analysis                                           │
+│   ⚡ categorical-structure-builder                               │
 │   ⚡ recursive-meta-prompting                                    │
 │                                                                 │
 │   Skills provide SPECIALIZED KNOWLEDGE when needed              │
@@ -133,6 +141,145 @@ A >=> B >=> C
 **Semantics**: Composition with iterative refinement.
 **Category**: Kleisli arrow composition
 **Quality**: Improves monotonically with iterations
+
+---
+
+## Comonad Operations (W)
+
+The `/context` command implements Comonad W for context extraction:
+
+### Extract (ε) - Focus on Current
+```
+/context @mode:extract @focus:recent "task"
+```
+**Semantics**: Extract focused context from history.
+**Category**: Counit ε: W(A) → A
+**Quality**: `quality(extract(W)) ≤ quality(W)`
+
+### Duplicate (δ) - Meta-Observation
+```
+/context @mode:duplicate "meta-observe"
+```
+**Semantics**: Create observation of the observation process.
+**Category**: Comultiplication δ: W(A) → W(W(A))
+**Quality**: `quality(duplicate(W)) = quality(W)`
+
+### Extend - Context-Aware Transform
+```
+/context @mode:extend @transform:summarize "apply"
+```
+**Semantics**: Apply transformation with full context access.
+**Category**: extend: (W(A) → B) → W(A) → W(B)
+**Quality**: `quality(extend(f)(W)) = quality(f(W))`
+
+### Comonad Laws (Enforced)
+```
+1. extract ∘ duplicate = id
+2. fmap extract ∘ duplicate = id
+3. duplicate ∘ duplicate = fmap duplicate ∘ duplicate
+```
+
+### Context Focus Targets
+```
+@focus:recent       Most recent N interactions
+@focus:all          Entire available history
+@focus:file         File-specific context
+@focus:conversation Conversation flow context
+```
+
+### Context Command References
+```
+→ /context @mode:extract    Extract focused context
+→ /context @mode:duplicate  Create meta-observation
+→ /context @mode:extend     Context-aware transformation
+→ /extract                  Alias for extract mode
+→ /focus                    Alias for extract @depth:1
+```
+
+---
+
+## Natural Transformation Operations (α)
+
+The `/transform` command implements Natural Transformations α: F ⇒ G for strategy switching:
+
+### Transform - Strategy Switch
+```
+/transform @from:zero-shot @to:chain-of-thought "task"
+```
+**Semantics**: Convert prompting strategy while preserving task semantics.
+**Category**: Natural transformation α_A: F(A) → G(A)
+**Quality**: `quality(α(x)) = transform_factor × quality(x)`
+
+### Naturality Condition (Enforced)
+```
+For all f: A → B:
+  α_B ∘ F(f) = G(f) ∘ α_A
+
+Diagram:
+      F(f)
+  F(A) ──────▶ F(B)
+    │            │
+  α_A          α_B
+    ▼            ▼
+  G(A) ──────▶ G(B)
+      G(f)
+```
+
+### Strategy Registry (Functors)
+
+| Strategy | Functor | Quality Baseline | Token Cost |
+|----------|---------|------------------|------------|
+| `zero-shot` | F_ZS | 0.65 | Low |
+| `few-shot` | F_FS | 0.78 | Medium |
+| `chain-of-thought` | F_CoT | 0.85 | Medium-High |
+| `tree-of-thought` | F_ToT | 0.88 | High |
+| `meta-prompting` | F_Meta | 0.90 | Variable |
+| `self-consistency` | F_SC | 0.82 | High |
+| `react` | F_ReAct | 0.84 | Variable |
+
+### Transformation Quality Matrix
+
+Transformation factor (row → column):
+
+| From \ To | ZS | FS | CoT | ToT | Meta |
+|-----------|-----|-----|------|------|-------|
+| **ZS** | 1.0 | 1.15 | 1.25 | 1.30 | 1.35 |
+| **FS** | 0.85 | 1.0 | 1.10 | 1.15 | 1.20 |
+| **CoT** | 0.75 | 0.90 | 1.0 | 1.05 | 1.10 |
+| **ToT** | 0.70 | 0.85 | 0.95 | 1.0 | 1.05 |
+
+### Transform Modes
+```
+@mode:transform    Apply transformation (default)
+@mode:compare      Compare strategies side-by-side
+@mode:analyze      Recommend optimal transformation
+```
+
+### Transform Command References
+```
+→ /transform @from:ZS @to:CoT    Zero-shot to Chain-of-Thought
+→ /transform @mode:compare       Compare strategies
+→ /transform @mode:analyze       Analyze optimal strategy
+→ /cot                           Alias for @to:chain-of-thought
+→ /tot                           Alias for @to:tree-of-thought
+```
+
+### Transformation Composition
+
+Natural transformations compose vertically:
+```
+α: F ⇒ G
+β: G ⇒ H
+───────
+β ∘ α: F ⇒ H
+```
+
+Example:
+```bash
+/chain [/transform @from:ZS @to:CoT → /transform @from:CoT @to:ToT] "task"
+# Equivalent to:
+/transform @from:zero-shot @to:tree-of-thought "task"
+```
 
 ---
 
