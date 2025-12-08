@@ -1,0 +1,4 @@
+# PDFs are not tracked in git (too large)
+# Download using: curl -L -o "filename.pdf" "https://arxiv.org/pdf/XXXX.XXXXX.pdf"
+*.pdf
+!.gitignore
