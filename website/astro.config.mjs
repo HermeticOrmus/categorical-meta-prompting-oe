@@ -2,10 +2,14 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
+// Environment-aware configuration
+const site = process.env.SITE_URL || 'https://manutej.github.io';
+const base = process.env.BASE_PATH || '/categorical-meta-prompting-oe';
+
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://hermeticormus.github.io',
-	base: '/categorical-meta-prompting-oe',
+	site,
+	base,
 	integrations: [
 		starlight({
 			title: 'Categorical Meta-Prompting',
@@ -15,24 +19,26 @@ export default defineConfig({
 				replacesTitle: false,
 			},
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/HermeticOrmus/categorical-meta-prompting-oe' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/manutej/categorical-meta-prompting-oe' },
 				{ icon: 'x.com', label: 'X/Twitter', href: 'https://x.com/karpathy/status/1820807166371975636' },
 			],
 			customCss: ['./src/styles/custom.css'],
 			head: [
+				// Content Security Policy
 				{
-					tag: 'link',
+					tag: 'meta',
 					attrs: {
-						rel: 'preconnect',
-						href: 'https://fonts.googleapis.com',
-					},
+						'http-equiv': 'Content-Security-Policy',
+						content: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
+					}
 				},
+				// Security headers
 				{
-					tag: 'link',
+					tag: 'meta',
 					attrs: {
-						rel: 'stylesheet',
-						href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap',
-					},
+						'http-equiv': 'X-Content-Type-Options',
+						content: 'nosniff'
+					}
 				},
 			],
 			sidebar: [

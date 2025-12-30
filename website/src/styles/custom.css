@@ -1,6 +1,55 @@
 /* Categorical Meta-Prompting - Custom Theme
    Inspired by diegobodart's amber/terminal aesthetic */
 
+/* ===== Self-Hosted Fonts ===== */
+@font-face {
+  font-family: 'Inter';
+  src: url('/categorical-meta-prompting-oe/fonts/Inter-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/categorical-meta-prompting-oe/fonts/Inter-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/categorical-meta-prompting-oe/fonts/Inter-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/categorical-meta-prompting-oe/fonts/Inter-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/categorical-meta-prompting-oe/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/categorical-meta-prompting-oe/fonts/JetBrainsMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ===== Color Scheme - Dark Mode with Amber Accents ===== */
 :root {
   /* Override Starlight's color variables */
